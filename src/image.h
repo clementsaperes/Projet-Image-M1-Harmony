@@ -4,7 +4,20 @@
 #include <vector>
 #include <string>
 #include <string>
+#include <cmath>
 
+const float TEMPLATE_DEFAULT_S_WIDTH = M_PI/6.0;
+const float TEMPLATE_DEFAULT_M_WIDTH = M_PI/2.0;
+const float TEMPLATE_DEFAULT_L_WIDTH = M_PI;
+const float TEMPLATE_DEFAULT_CENTER = 0.0;
+
+enum Template_format{i = 0,
+                     V = 1,
+                     L = 2,
+                     I = 3,
+                     T = 4,
+                     Y = 5,
+                     X = 6};
 
 struct Pixel
 {
@@ -14,6 +27,29 @@ struct Pixel
     Pixel(unsigned char _r, unsigned char _g, unsigned char _b) : r(_r), g(_g), b(_b) {}
 };
 
+class Template
+{
+    private :
+    std::vector<float> centers;
+    std::vector<float> widths;
+
+    void autoCongru();
+
+    public :
+    Template(std::vector<float> c = {}, std::vector<float> w = {});
+    Template(float c = 0, float w = 0);
+    Template(Template_format format);
+
+    int get_nbSector();
+    float get_center(int n);
+    float get_widths(int n);
+    std::vector<float> get_center();
+    std::vector<float> get_widths();
+
+    void rotate(float angle);
+
+    static float congru(float angle);
+};
 
 class Image 
 {
