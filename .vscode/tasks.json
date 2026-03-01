@@ -1,0 +1,110 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "C++ build only",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "set -e && mkdir -p build && cd build && cmake .. && cmake --build . -j$(nproc)"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
+            "label": "C++ build and run",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "set -e && mkdir -p build && cd build && cmake .. && cmake --build . -j$(nproc) && ./ProjetImage"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
+            "label": "C++ clean build",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "set -e && echo 'Cleaning build directory...' && rm -rf build && mkdir -p build && cd build && cmake .. && cmake --build . -j$(nproc)"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
+            "label": "C++ clean build and run",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "set -e && echo 'Cleaning build directory...' && rm -rf build && mkdir -p build && cd build && cmake .. && cmake --build . -j$(nproc) && ./ProjetImage"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
+            "label": "Clean build directory",
+            "type": "shell",
+            "command": "rm",
+            "args": [
+                "-rf",
+                "build"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        }
+    ]
+}

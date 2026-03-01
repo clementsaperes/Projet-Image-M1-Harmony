@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 project(ProjetImageHarmony VERSION 1.0 LANGUAGES CXX)
 
 add_executable(ProjetImage
-    src/main.cpp
+    main.cpp
     src/image.cpp
     src/template.cpp
 )
