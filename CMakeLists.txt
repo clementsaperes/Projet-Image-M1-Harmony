@@ -5,6 +5,7 @@ project(ProjetImageHarmony VERSION 1.0 LANGUAGES CXX)
 add_executable(ProjetImage
     src/main.cpp
     src/image.cpp
+    src/template.cpp
 )
 
 target_compile_features(ProjetImage PRIVATE cxx_std_17)

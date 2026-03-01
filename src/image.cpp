@@ -16,101 +16,6 @@
 #include <map>
 #include <cstdlib> 
 
-
-// TEMPLATE //
-
-// constructeur
-Template::Template(std::vector<float> c = {}, std::vector<float> w = {})
-{
-    if (c.size() != w.size()) throw std::runtime_error("Il doit y avoir autant de centre de secteur que de largeur de secteur !\n");
-    centers.resize(c.size());
-    widths.resize(w.size());
-    for (int i=0 ; i<c.size() ; i++)
-    {
-        centers[i] = Template::congru(c[i]);
-        widths[i] = Template::congru(w[i]);
-    }
-}
-Template::Template(float c = TEMPLATE_DEFAULT_CENTER, float w = TEMPLATE_DEFAULT_S_WIDTH)
-{
-    centers = {Template::congru(c)};
-    widths = {Template::congru(w)};
-}
-Template::Template(Template_format format) 
-{
-    switch (format)
-    {
-        case i :
-        {
-            centers = {TEMPLATE_DEFAULT_CENTER};
-            widths = {TEMPLATE_DEFAULT_S_WIDTH};
-            break;
-        }
-        case V :
-        {
-            centers = {TEMPLATE_DEFAULT_CENTER};
-            widths = {TEMPLATE_DEFAULT_M_WIDTH};
-            break;
-        }
-        case L :
-        {
-            centers = {TEMPLATE_DEFAULT_CENTER, TEMPLATE_DEFAULT_CENTER-M_PI/2.0};
-            widths = {TEMPLATE_DEFAULT_S_WIDTH, TEMPLATE_DEFAULT_M_WIDTH};
-            break;
-        }
-        case I :
-        {
-            centers = {TEMPLATE_DEFAULT_CENTER, TEMPLATE_DEFAULT_CENTER-M_PI};
-            widths = {TEMPLATE_DEFAULT_S_WIDTH, TEMPLATE_DEFAULT_S_WIDTH};
-            break;
-        }
-        case T :
-        {
-            centers = {TEMPLATE_DEFAULT_CENTER};
-            widths = {TEMPLATE_DEFAULT_L_WIDTH};
-            break;
-        }
-        case Y :
-        {
-            centers = {TEMPLATE_DEFAULT_CENTER, TEMPLATE_DEFAULT_CENTER-M_PI};
-            widths = {TEMPLATE_DEFAULT_M_WIDTH, TEMPLATE_DEFAULT_S_WIDTH};
-            break;
-        }
-        case X :
-        {
-            centers = {TEMPLATE_DEFAULT_CENTER, TEMPLATE_DEFAULT_CENTER-M_PI};
-            widths = {TEMPLATE_DEFAULT_M_WIDTH, TEMPLATE_DEFAULT_M_WIDTH};
-            break;
-        }
-    }
-}
-
-// accesseurs
-int Template::get_nbSector() {return centers.size();}
-float Template::get_center(int n) {return centers[n];}
-float Template::get_widths(int n) {return widths[n];}
-std::vector<float> Template::get_center() {return centers;}
-std::vector<float> Template::get_widths() {return widths;}
-
-float Template::congru(float angle)
-{
-    float pi2 = 2*M_PI;
-    float rest = angle - float(int(angle/pi2))*pi2;
-    return (rest>M_PI)*(rest-pi2) + (rest<=-M_PI)*(rest+pi2) + (rest<=M_PI && rest>-M_PI)*rest;
-}
-
-void Template::rotate(float angle)
-{
-    for (int i=0 ; i<centers.size() ; i++)
-        centers[i] = Template::congru(centers[i]+angle);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// IMAGE //
-
-
-// constructeur
 Image::Image(const std::string path)
 {
     auto dot = path.find_last_of('.');
@@ -276,30 +181,14 @@ void Image::histogram(const std::string name) const
     }
     csv.close();
 
-
-    std::ofstream csv_r("../assets/data/csv/" + name + "_R.csv");
-    std::ofstream csv_g("../assets/data/csv/" + name + "_G.csv");
-    std::ofstream csv_b("../assets/data/csv/" + name + "_B.csv");
-    if (!csv_r || !csv_g || !csv_b)
-        throw std::runtime_error("Impossible d'ouvrir CSV séparés");
-    for (int i = 0; i < 256; ++i) {
-        csv_r << i << " " << histo_r[i] << "\n";
-        csv_g << i << " " << histo_g[i] << "\n";
-        csv_b << i << " " << histo_b[i] << "\n";
-    }
-    csv_r.close(); csv_g.close(); csv_b.close();
-
     // png
-    std::string png_global = "../assets/data/histo/" + name + ".png";
-    std::string png_r = "../assets/data/histo/" + name + "_R.png";
-    std::string png_g = "../assets/data/histo/" + name + "_G.png";
-    std::string png_b = "../assets/data/histo/" + name + "_B.png";
+    std::string png = "../assets/data/histo/" + name + ".png";
 
     // PNG global
-    std::string cmd_global =
+    std::string cmd =
         "gnuplot -e \""
         "set terminal pngcairo size 800,600 enhanced font 'Arial,12'; "
-        "set output '" + png_global + "'; "
+        "set output '" + png + "'; "
         "set title 'Histogramme'; "
         "set xlabel 'Intensité'; "
         "set ylabel 'Nombre de pixels'; "
@@ -307,58 +196,68 @@ void Image::histogram(const std::string name) const
         "'" + csv_file + "' using 1:3 with lines lc rgb 'green' title 'G', "
         "'" + csv_file + "' using 1:4 with lines lc rgb 'blue' title 'B'\"";
 
-    if(std::system(cmd_global.c_str()) != 0)
+    if(std::system(cmd.c_str()) != 0)
         printf("Erreur lors de la génération de l'image avec Gnuplot\n");
-
-    // PNG R
-    std::string cmd_r =
-        "gnuplot -e \""
-        "set terminal pngcairo size 800,600 enhanced font 'Arial,12'; "
-        "set output '" + png_r + "'; "
-        "set title 'Histogramme R'; "
-        "set xlabel 'Intensité'; "
-        "set ylabel 'Nombre de pixels'; "
-        "plot '" + csv_file + "' using 1:2 with lines lc rgb 'red' title 'R'\"";
-    std::system(cmd_r.c_str());
-
-    // PNG G
-    std::string cmd_g =
-        "gnuplot -e \""
-        "set terminal pngcairo size 800,600 enhanced font 'Arial,12'; "
-        "set output '" + png_g + "'; "
-        "set title 'Histogramme G'; "
-        "set xlabel 'Intensité'; "
-        "set ylabel 'Nombre de pixels'; "
-        "plot '" + csv_file + "' using 1:3 with lines lc rgb 'green' title 'G'\"";
-    std::system(cmd_g.c_str());
-
-    // PNG B
-    std::string cmd_b =
-        "gnuplot -e \""
-        "set terminal pngcairo size 800,600 enhanced font 'Arial,12'; "
-        "set output '" + png_b + "'; "
-        "set title 'Histogramme B'; "
-        "set xlabel 'Intensité'; "
-        "set ylabel 'Nombre de pixels'; "
-        "plot '" + csv_file + "' using 1:4 with lines lc rgb 'blue' title 'B'\"";
-    std::system(cmd_b.c_str());
 }
 
+void Image::histogram_one_channel(const std::string name, char channel) const
+{
+    std::map<unsigned char, int> histo;
+
+    // Initialisation
+    for (int i = 0; i < 256; i++)
+        histo[i] = 0;
+
+    // Remplissage selon le canal
+    for (const Pixel& p : image_data)
+    {
+        switch (channel)
+        {
+            case 'R': histo[p.r]++; break;
+            case 'G': histo[p.g]++; break;
+            case 'B': histo[p.b]++; break;
+            default:
+                throw std::invalid_argument("Canal invalide (R, G ou B)");
+        }
+    }
+
+    // Définition couleur
+    std::string couleur;
+    switch (channel)
+    {
+        case 'R': couleur = "red"; break;
+        case 'G': couleur = "green"; break;
+        case 'B': couleur = "blue"; break;
+    }
+
+    // CSV
+    std::string csv_file = "../assets/data/csv/" + name + ".csv";
+    std::ofstream csv(csv_file);
+    if (!csv) throw std::runtime_error("Impossible d'ouvrir " + csv_file);
+
+    for (int i = 0; i < 256; ++i)
+        csv << i << " " << histo[i] << "\n";
+
+    csv.close();
+
+    // PNG
+    std::string png = "../assets/data/histo/" + name + ".png";
+
+    std::string cmd =
+        "gnuplot -e \""
+        "set terminal pngcairo size 800,600 enhanced font 'Arial,12'; "
+        "set output '" + png + "'; "
+        "set title 'Histogramme " + std::string(1, channel) + "'; "
+        "set xlabel 'Intensité'; "
+        "set ylabel 'Nombre de pixels'; "
+        "plot '" + csv_file + "' using 1:2 with lines lc rgb '" + couleur +
+        "' title '" + std::string(1, channel) + "'\"";
+
+    if (std::system(cmd.c_str()) != 0)
+        printf("Erreur lors de la génération avec Gnuplot\n");
+}
 
 // getter
-int Image::get_width() const
-{
-    return this->width;
-}
-
-
-int Image::get_height() const
-{
-    return this->height;
-}
-
-
-std::vector<Pixel> Image::get_img() const
-{
-    return this->image_data;
-}
+const int Image::get_width() const { return this->width; }
+const int Image::get_height() const { return this->height; }
+const std::vector<Pixel> Image::get_img() const { return this->image_data; }
