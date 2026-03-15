@@ -1,48 +1,68 @@
-#include "color_harmo.hpp"
 #include "interface.hpp"
-
+#include <vector>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
-#include <iostream>
+
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
+#include "interface.hpp"
+#include "template.hpp"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <stb_image.h>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
 
-void test()
+void test_graphcut(const std::string& img_path, Template_format fmt, double lambda)
 {
-    Color_harmo ch("../assets/img/baboon.ppm");
+    printf("\n=== TEST GRAPH CUT ===\n");
+    printf("Image  : %s\n", img_path.c_str());
+    printf("Format : %d\n", (int)fmt);
+    printf("Lambda : %.2f\n", lambda);
 
-    Template t(Template_format::I);
+    Template tmpl(fmt);
+    tmpl.set_image(img_path);
+    const std::vector<Pixel> pixels = tmpl.get_img();
 
-    std::cout << "F(I-template): " << ch.F(t) << "\n";
+    int n = pixels.size();
+    std::vector<double> theta1, theta2;
+    std::vector<bool> is_fixed;
+    std::vector<int> v;
+    tmpl.compute_thetas(pixels, theta1, theta2, is_fixed, v);
 
-    double best_angle = ch.bestOrientation(1000, Template_format::I);
-    std::cout << "Best orientation (rad): " << best_angle << "\n";
-    std::cout << "Best orientation (deg): " << best_angle * 180.0 / M_PI << "\n";
+    int n_fixed = 0;
+    for (bool f : is_fixed) if (f) n_fixed++;
+    printf("Pixels fixes (dans secteur) : %d / %d (%.1f%%)\n",
+           n_fixed, n, 100.0 * n_fixed / n);
 
-    Template t_rot = t;
-    t_rot.rotate(best_angle);
-    std::cout << "F(I-template tourné): " << ch.F(t_rot) << "\n";
+    double e_before = tmpl.compute_energie(lambda, v);
+    printf("Energie avant graph cut : %.6f\n", e_before);
 
-    auto [best_format, best_angle_template] = ch.bestTemplate(1000);
-    std::cout << "Best template: " << best_format << "\n";
-    std::cout << "Best angle (rad): " << best_angle_template << "\n";
-    std::cout << "Best angle (deg): " << best_angle_template * 180.0 / M_PI << "\n";
+    tmpl.run_graphcut(pixels, theta1, theta2, is_fixed, lambda, v);
 
-    double angle = 2.64522;
-    std::cout << "Degrees: " << angle * 180.0 / M_PI << "\n";
+    int n_plus = 0, n_minus = 0;
+    for (int idx = 0; idx < n; idx++)
+    {
+        if (v[idx] ==  1)
+            n_plus++;
+        if (v[idx] == -1)
+            n_minus++;
+    }
+    printf("Labels apres graph cut : +1=%d  -1=%d\n", n_plus, n_minus);
 
-    Pixel color = Pixel::toRGB(angle, 1.0, 1.0);
-    std::cout << "Color: r=" << (int)color.r << " g=" << (int)color.g
-              << " b=" << (int)color.b << "\n";
+    double e_after = tmpl.compute_energie(lambda, v);
+    printf("Energie apres  graph cut : %.6f\n", e_after);
 
-    Image img = Image("../assets/img/baboon.ppm");
-    std::vector<int> v(img.get_width() * img.get_height(), 0);
-    double E = ch.compute_energie(1.0, v);
-    std::cout << "Compute Energie (lambda=1, v=0): " << E << "\n";
+    if (e_after <= e_before)
+        printf("Energie reduite de %.6f\n", e_before - e_after);
+    else
+        printf("Energie n'a pas diminue (diff=%.6f)\n", e_after - e_before);
 }
 
 GLuint load_texture(const std::string& path, int& width, int& height)
@@ -84,7 +104,7 @@ int main()
     glewExperimental = true;
     if (glewInit() != GLEW_OK)
     { 
-        std::cerr << "Failed GLEW\n"; 
+        printf("Failed GLEW\n"); 
         return -1;
     }
 
@@ -97,6 +117,7 @@ int main()
 
     Interface iface;
     iface.load_images("../assets/img");
+    test_graphcut("../assets/img/Gnar.png", Template_format::V, 2.0);
 
     GLuint current_tex = 0;
     int tex_w = 0, tex_h = 0;

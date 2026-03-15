@@ -10,9 +10,11 @@ include_directories(
     external/imgui
     external/glfw-3.1.2/include
     external/glew-1.13.0/include
+    external/maxflow-v3.04.src
     src
     common
 )
+
 
 set(IMGUI_SRC
     external/imgui/imgui.cpp
@@ -33,9 +35,10 @@ add_executable(ProjetImage
     main.cpp
     src/image.cpp
     src/template.cpp
-    src/color_harmo.cpp
     src/interface.cpp
     common/stb_image.cpp
+    external/maxflow-v3.04.src/graph.cpp
+    external/maxflow-v3.04.src/maxflow.cpp
     ${IMGUI_SRC}
 )
 
