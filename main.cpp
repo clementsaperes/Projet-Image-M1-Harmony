@@ -1,44 +1,264 @@
+#include "interface.hpp"
+#include <vector>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <stb_image.h>
+
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
+#include "interface.hpp"
 #include "src/image.hpp"
 #include "src/template.hpp"
-#include <iostream>
+#include "template.hpp"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <stb_image.h>
 
-int main() {
-  // Pixel p(255, 0, 0);
-  // double h, s, v;
-  // p.toHSV(h, s, v);
-  // std::cout << "Red HSV: h=" << h << " s=" << s << " v=" << v << "\n";
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+static bool show_imgui = true;
+static bool space_pressed = false;
 
-  // Pixel tmp = Pixel::toRGB(h, s, v);
-  // std::cout << "retour vers RGB: r=" << (int)tmp.r << " g=" << (int)tmp.g
-  //           << " b=" << (int)tmp.b << "\n";
+std::vector<Pixel> algo_color_harmonization(std::string& img_path, double lambda)
+{
+    printf("Image : %s\n", img_path.c_str());
+    printf("\n --- partie 3 ---\n");
+    
+    Template t(std::vector<double>{}, std::vector<double>{});
+    t.set_image(img_path);
 
-  // Template t(Template_format::I);
-  // std::cout << "I-template sectors: " << t.get_nbSector() << "\n";
-  // std::cout << "center0=" << t.get_center(0) << " width0=" << t.get_widths(0)
-  //           << "\n";
-  // std::cout << "center1=" << t.get_center(1) << " width1=" << t.get_widths(1)
-  //           << "\n";
+    auto [format, angle] = t.bestTemplate();
 
-  // std::cout << "Distance of h=0 (inside sector): " <<
-  // t.distanceToTemplate(0.0)
-  //           << "\n";
+    printf("Best template: %d\n", (int)format);
+    printf("Best angle: %.6f\n", angle);
 
-  // std::cout << "Distance of h=π/2 (outside): "
-  //           << t.distanceToTemplate(M_PI / 2.0) << "\n";
+    printf("\n -- partie 4 --- \n");
+    printf("Lambda : %.2f\n", lambda);
 
-  // Image img("../assets/img/baboon.ppm");
-  // Image img("../assets/img/peacock.jpg");
-  // std::cout << "F(I-template): " << t.F(img) << "\n";
+    Template tmpl(format);
+    tmpl.set_image(img_path);
+    tmpl.rotate(angle);
+    std::vector<Pixel> pixels = tmpl.get_img();
 
-  // auto [format, angle] = Template::bestTemplate(img);
+    int n = pixels.size();
+    std::vector<double> theta1, theta2;
+    std::vector<bool> is_fixed;
+    std::vector<int> v;
+    tmpl.compute_thetas(pixels, theta1, theta2, is_fixed, v);
 
-  // std::cout << "Best template: " << format << "\n";
-  // std::cout << "Best angle: " << angle << "\n";
+    int n_fixed = 0;
+    for (bool f : is_fixed)
+        if (f)
+            n_fixed++;
+    printf("Pixels fixes (dans secteur) : %d / %d (%.1f%%)\n",
+           n_fixed, n, 100.0 * n_fixed / n);
 
-  double angle = 2.64522;
-  std::cout << "Degrees: " << angle * 180.0 / M_PI << "\n";
+    double e_before = tmpl.compute_energie(lambda, v);
+    printf("Energie avant graph cut : %.6f\n", e_before);
 
-  Pixel color = Pixel::toRGB(angle, 1.0, 1.0);
-  std::cout << "Color: r=" << (int)color.r << " g=" << (int)color.g
-            << " b=" << (int)color.b << "\n";
+    tmpl.run_graphcut(pixels, theta1, theta2, is_fixed, lambda, v);
+
+    int n_plus = 0, n_minus = 0;
+    for (int idx = 0; idx < n; idx++)
+    {
+        if (v[idx] ==  1)
+            n_plus++;
+        if (v[idx] == -1)
+            n_minus++;
+    }
+    printf("Labels apres graph cut : +1=%d  -1=%d\n", n_plus, n_minus);
+
+    double e_after = tmpl.compute_energie(lambda, v);
+    printf("Energie apres  graph cut : %.6f\n", e_after);
+
+    if (e_after <= e_before)
+        printf("Energie reduite de %.6f\n", e_before - e_after);
+    else
+        printf("Energie n'a pas diminue (diff=%.6f)\n", e_after - e_before);
+
+    return pixels;
+}
+
+auto draw_texture = [](GLuint tex, int img_w, int img_h,
+                       int win_w, int win_h,
+                       float x_left, float x_right)
+{
+    float zone_w = (x_right - x_left) * win_w / 2.0f;
+    float zone_h = (float)win_h;
+
+    float img_ratio  = (float)img_w / img_h;
+    float zone_ratio = zone_w / zone_h;
+
+    float w, h;
+    if (img_ratio > zone_ratio) { w = x_right - x_left; h = w / img_ratio * win_w / win_h; }
+    else                        { h = 1.0f; w = h * img_ratio * win_h / win_w * 2.0f / (x_right - x_left) * (x_right - x_left); }
+
+    float cx = (x_left + x_right) / 2.0f;
+    float l = cx - w / 2.0f;
+    float r = cx + w / 2.0f;
+    float t =  h;
+    float b = -h;
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 1); glVertex2f(l, b);
+    glTexCoord2f(1, 1); glVertex2f(r, b);
+    glTexCoord2f(1, 0); glVertex2f(r, t);
+    glTexCoord2f(0, 0); glVertex2f(l, t);
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_TEXTURE_2D);
+};
+
+GLuint load_texture(const std::string& path, int& width, int& height)
+{
+    int n;
+    unsigned char* data = stbi_load(path.c_str(), &width, &height, &n, 4);
+    if (!data)
+        return 0;
+
+    GLuint tex;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height,
+                 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    stbi_image_free(data);
+    return tex;
+}
+
+int main()
+{
+    // glfw
+    if (!glfwInit())
+        return -1;
+    GLFWwindow* window = glfwCreateWindow(1500, 900, "Image Harmony", NULL, NULL);
+    if (!window)
+    { 
+        glfwTerminate(); 
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+
+    // glew
+    glewExperimental = true;
+    if (glewInit() != GLEW_OK)
+    { 
+        printf("Failed GLEW\n"); 
+        return -1;
+    }
+
+    // imgui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 130");
+    ImGui::StyleColorsDark();
+
+    Interface interface;
+    interface.load_images("../assets/img");
+    
+    GLuint current_tex = 0;
+    GLuint result_tex = 0; 
+    int tex_w = 0, tex_h = 0;
+    int res_w = 0, res_h = 0;
+    std::string last_image;
+    int last_algo = 0;
+    while (!glfwWindowShouldClose(window))
+    {
+        glfwPollEvents();
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            glfwSetWindowShouldClose(window, true);
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !space_pressed)
+        {
+            show_imgui = !show_imgui;
+            space_pressed = true;
+        }
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
+            space_pressed = false;
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        interface.render();
+
+        std::string img_path = interface.get_img();
+        if (img_path != last_image)
+        {
+            if (current_tex)
+                glDeleteTextures(1, &current_tex);
+            current_tex = load_texture(img_path, tex_w, tex_h);
+            last_image = img_path;
+        }
+        int current_algo = interface.get_algo();
+        if (last_algo != current_algo)
+        {
+            if (current_algo == 1)
+            {
+                std::string filename = img_path.substr(img_path.find_last_of("/\\") + 1);
+
+                std::vector<Pixel> data = algo_color_harmonization(img_path, 1.0);
+                Image img(img_path);
+                std::vector<unsigned char> buffer;
+                buffer.reserve(data.size() * 3);
+                for (const Pixel& p : data)
+                {
+                    buffer.push_back(p.r);
+                    buffer.push_back(p.g);
+                    buffer.push_back(p.b);
+                }
+                Image result(buffer, img.get_width(), img.get_height());
+
+                std::string out_path = "./assets/out/color_harmonization/" + filename;
+                // result.write_ppm(out_path);
+
+                if (result_tex)
+                    glDeleteTextures(1, &result_tex);
+                // result_tex = load_texture(out_path, res_w, res_h);
+            }
+            else if (current_algo == 2)
+            {
+                
+            }
+            last_algo = current_algo;
+        }
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        int win_w, win_h;
+        glfwGetFramebufferSize(window, &win_w, &win_h);
+        glViewport(0, 0, win_w, win_h);
+        if (current_tex)
+            draw_texture(current_tex, tex_w, tex_h, win_w, win_h, -1.0f, 0.0f);
+
+        if (result_tex)
+            draw_texture(result_tex, res_w, res_h, win_w, win_h,  0.0f, 1.0f);
+
+        if (show_imgui)
+        {
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        }
+        else
+            ImGui::EndFrame();
+
+        glfwSwapBuffers(window);
+    }
+
+    if (current_tex)
+        glDeleteTextures(1, &current_tex);
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return 0;
 }
