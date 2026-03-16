@@ -9,21 +9,38 @@ double gaussien(double esp, double st_dev, double x) {
   return exp(pow((x-esp)/st_dev, 2.0)/-2.0) / (st_dev*sqrt(2.0*M_PI));
 }
 
-Image projectPixels(Image & imIn, Template & temp, std::vector<int> & sectorTarget)
+double mod2pi(double angle)
 {
-  if (sectorTarget.size() != imIn.get_nb_pixels()) throw std::runtime_error("Buffer doit avoir la même taille que image");
+  double pi2 = 2 * M_PI;
+  double rest = angle - double(int(angle / pi2)) * pi2;
+  return rest + 2*M_PI*(rest<0);
+}
+
+Image projectPixels(Image & imIn, Template & temp, std::vector<int> & V)
+{
+  if (V.size() != imIn.get_nb_pixels()) throw std::runtime_error("Buffer doit avoir la même taille que image");
   std::vector<Pixel> dataIn = imIn.get_img();
   std::vector<unsigned char> dataOut;
-  dataOut.resize(sectorTarget.size()*3);
-  for (int p=0 ; p<sectorTarget.size() ; p++)
+  dataOut.resize(V.size()*3);
+  for (int p=0 ; p<V.size() ; p++)
   {
     double h, s, v, h2;
     dataIn[p].toHSV(h, s, v);
-    double Cp = temp.get_center(sectorTarget[p]);
-    double w2 = temp.get_widths(sectorTarget[p])/2.0;
-    double dist = Template::congru(h-Cp);
+    int index = 0;
+    double distMin = 2.0*M_PI;
+    for (int i=0 ; i<temp.get_nbSector() ; i++)
+    {
+      double Cp = temp.get_center(i);
+      double w2 = temp.get_widths(i)/2.0;
+      double bord = Template::congru(Cp - V[p]*w2);
+      double d = mod2pi((bord-h)*V[p]);
+      if (d<distMin) {distMin = d; index = i;}
+    }
+    double Cp = temp.get_center(index);
+    double w2 = temp.get_widths(index)/2.0;
+    double dist = mod2pi((Cp-h)*V[p]);
     double sens = (dist > 0)*2-1;
-    h2 = Cp + /*sens**/w2*(1.0-gaussien(0.0, w2, dist));
+    h2 = Cp - V[p]*w2*(1.0-gaussien(0.0, w2, dist));
     Pixel pix = Pixel::toRGB(h2, s, v);
     dataOut[3*p] = pix.r;
     dataOut[3*p+1] = pix.g;
