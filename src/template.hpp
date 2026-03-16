@@ -25,7 +25,7 @@ class Template
   		Template(std::vector<double> c = {}, std::vector<double> w = {});
   		Template(double c = 0, double w = 0);
   		Template(Template_format format);
-
+		void set_image(std::string path);
   		const int get_nbSector() const;
   		const double get_center(int n) const;
   		const double get_widths(int n) const;
@@ -38,7 +38,11 @@ class Template
 
   		double distanceToTemplate(double hue) const;
   		bool isInsideSector(double hue, int sectorIndex) const;
-
+		// 3.0
+		double F() const;
+		double bestOrientation() const; // M(X,Tm) dans le papier
+		std::pair<Template_format, double> bestTemplate() const; // B(X)
+		// 4.0
   		double distance_hue(double h1, double h2) const;
   		double energie_1(int width, int height,
   		                 const std::vector<Pixel>& pixels,
@@ -49,7 +53,7 @@ class Template
   		                 const std::vector<int>& v) const;
 		
   		double compute_energie(double lambda, const std::vector<int>& v) const;
-  		void set_image(std::string path);
+  		
   		void compute_thetas(const std::vector<Pixel>& pixels,
   		                  std::vector<double>& theta1,
   		                  std::vector<double>& theta2,

@@ -8,7 +8,7 @@ class Interface {
 private:
     std::vector<std::string> images;
     int selected_img;
-    int selected_algo;
+    int selected_algo = 0;
 
 public:
     Interface();

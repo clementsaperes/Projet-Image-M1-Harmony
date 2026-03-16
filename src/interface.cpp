@@ -2,14 +2,12 @@
 #include "imgui.h"
 #include <filesystem>
 
-namespace fs = std::filesystem;
-
 Interface::Interface() : selected_img(0), selected_algo(0) {}
 
 void Interface::load_images(const std::string& folder)
 {
     images.clear();
-    for (const auto& entry : fs::directory_iterator(folder))
+    for (const auto& entry : std::filesystem::directory_iterator(folder))
     {
         if (entry.is_regular_file())
         {
@@ -59,8 +57,9 @@ void Interface::render()
     }
 
     ImGui::Text("Choisir l'algorithme :");
-    ImGui::RadioButton("Algo 1", &selected_algo, 0);
-    ImGui::RadioButton("Algo 2", &selected_algo, 1);
+    ImGui::RadioButton("Auncun algo", &selected_algo, 0);
+    ImGui::RadioButton("color harmonization", &selected_algo, 1);
+    ImGui::RadioButton("Algo 2", &selected_algo, 2);
 
     ImGui::End();
 }

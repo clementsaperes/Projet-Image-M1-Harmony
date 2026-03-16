@@ -1,4 +1,5 @@
 #include "template.hpp"
+#include <omp.h>
 #include <stdexcept>
 #include "graph.h"
 
@@ -139,7 +140,140 @@ double Template::distance_hue(double h1, double h2) const
 
     return d;
 }
+// 3.0
+double Template::F() const
+{
+    double total = 0.0;
+    for (const Pixel &p : this->img.get_img())
+    {
+        double h, s, v;
+        p.toHSV(h, s, v);
+        total += distanceToTemplate(h) * s;
+    }
+    return total;
+}
+double Template::bestOrientation() const
+{   
+    const double golden = 0.3819660;
+    const double tol = 1e-4;
+    double a = 0.0, b = 2 * M_PI;
 
+    double x = a + golden * (b - a);
+    double w = x, v = x;
+
+    Template tx = *this;
+    tx.rotate(x);
+    double fx = tx.F();
+    double fw = fx, fv = fx;
+
+    double d = 0.0, e = 0.0;
+
+    for (int iter = 0; iter < 100; iter++)
+    {
+        double midpoint = 0.5 * (a + b);
+        double tol1 = tol * std::abs(x) + 1e-10;
+        double tol2 = 2.0 * tol1;
+
+        if (std::abs(x - midpoint) <= tol2 - 0.5 * (b - a))
+            break;
+
+        bool parabolic_ok = false;
+        double u;
+
+        if (std::abs(e) > tol1)
+        {
+            double r = (x - w) * (fx - fv);
+            double q = (x - v) * (fx - fw);
+            double p = (x - v) * q - (x - w) * r;
+            q = 2.0 * (q - r);
+            if (q > 0)
+                p = -p;
+            q = std::abs(q);
+            r = e;
+            e = d;
+
+            if (std::abs(p) < std::abs(0.5 * q * r) && p > q * (a - x) &&
+            p < q * (b - x))
+            {
+                d = p / q;
+            u = x + d;
+            parabolic_ok = true;
+            }
+        }
+
+        if (!parabolic_ok)
+        {
+            e = (x < midpoint) ? b - x : a - x;
+            d = golden * e;
+        }
+
+        u = x + d;
+        Template tu = *this;
+        tu.rotate(u);
+        double fu = tu.F();
+
+        if (fu <= fx)
+        {
+            if (u < x)
+                b = x;
+            else
+                a = x;
+            v = w;
+            fv = fw;
+            w = x;
+            fw = fx;
+            x = u;
+            fx = fu;
+        } else
+        {
+            if (u < x)
+                a = u;
+            else
+                b = u;
+            if (fu <= fw || w == x)
+            {
+                 v = w;
+                fv = fw;
+                w = u;
+                fw = fu;
+            } else if (fu <= fv || v == x || v == w)
+            {
+                v = u;
+                fv = fu;
+            }
+        }
+    }
+
+    return x;
+}
+
+std::pair<Template_format, double> Template::bestTemplate() const
+{ 
+    Template_format best_format = i;
+    double best_angle = 0.0;
+    double best_F = std::numeric_limits<double>::max();
+
+    for (int ite = 0; ite <= 6; ite++) {
+        Template t((Template_format)ite);
+        t.img = this->img;
+        double angle = t.bestOrientation();
+
+        Template t2((Template_format)ite);
+        t2.img = this->img;
+        t2.rotate(angle);
+        double f = t2.F();
+
+        if (f < best_F)
+        {
+            best_F = f;
+            best_angle = angle;
+            best_format = (Template_format)ite;
+        }
+    }
+
+    return {best_format, best_angle};
+}
+// 4.1
 double Template::energie_1(int width, int height,
                             const std::vector<Pixel>& pixels,
                             const std::vector<int>& v) const

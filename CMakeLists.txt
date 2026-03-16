@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(ProjetImageHarmony)
 
 find_package(OpenGL REQUIRED)
-
+find_package(OpenMP REQUIRED)
 add_subdirectory(external)
 
 include_directories(
@@ -43,6 +43,7 @@ add_executable(ProjetImage
 )
 
 target_link_libraries(ProjetImage
+    OpenMP::OpenMP_CXX
     ${ALL_LIBS}
 )
 

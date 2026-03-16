@@ -34,13 +34,15 @@ Image::Image(const std::string path)
 
 Image::Image(const std::vector<unsigned char> &buffer, int width, int height)
 {
-  this->nb_pixels = width * height;
-  if (buffer.size() != this->nb_pixels * 3)
-    throw std::runtime_error("Taille du buffer incorrecte");
+	this->width = width;
+	this->height = height;
+  	this->nb_pixels = width * height;
+  	if (buffer.size() != this->nb_pixels * 3)
+    	throw std::runtime_error("Taille du buffer incorrecte");
 
-  this->image_data.resize(this->nb_pixels);
-  for (int i = 0; i < nb_pixels; ++i)
-	this->image_data[i] =Pixel(buffer[3 * i + 0], buffer[3 * i + 1], buffer[3 * i + 2]);
+  	this->image_data.resize(this->nb_pixels);
+  	for (int i = 0; i < nb_pixels; ++i)
+		this->image_data[i] =Pixel(buffer[3 * i + 0], buffer[3 * i + 1], buffer[3 * i + 2]);
 
 }
 
