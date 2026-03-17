@@ -1,4 +1,5 @@
 #include "interface.hpp"
+#include <cstdio>
 #include <vector>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -21,7 +22,8 @@
 #include "imgui_impl_opengl3.h"
 static bool show_imgui = true;
 static bool space_pressed = false;
-
+static int max_w = 1500;
+static int max_h = 1500;
 std::vector<Pixel> algo_color_harmonization(std::string& img_path, double lambda)
 {
     printf("Image : %s\n", img_path.c_str());
@@ -31,11 +33,10 @@ std::vector<Pixel> algo_color_harmonization(std::string& img_path, double lambda
     t.set_image(img_path);
 
     auto [format, angle] = t.bestTemplate();
-
     printf("Best template: %d\n", (int)format);
     printf("Best angle: %.6f\n", angle);
 
-    printf("\n -- partie 4 --- \n");
+    printf("\n --- partie 4 --- \n");
     printf("Lambda : %.2f\n", lambda);
 
     Template tmpl(format);
@@ -44,30 +45,20 @@ std::vector<Pixel> algo_color_harmonization(std::string& img_path, double lambda
     std::vector<Pixel> pixels = tmpl.get_img();
 
     int n = pixels.size();
-    std::vector<double> theta1, theta2;
-    std::vector<bool> is_fixed;
     std::vector<int> v;
-    tmpl.compute_thetas(pixels, theta1, theta2, is_fixed, v);
 
-    int n_fixed = 0;
-    for (bool f : is_fixed)
-        if (f)
-            n_fixed++;
-    printf("Pixels fixes (dans secteur) : %d / %d (%.1f%%)\n",
-           n_fixed, n, 100.0 * n_fixed / n);
+    tmpl.compute_thetas(pixels, v);
 
     double e_before = tmpl.compute_energie(lambda, v);
     printf("Energie avant graph cut : %.6f\n", e_before);
 
-    tmpl.run_graphcut(pixels, theta1, theta2, is_fixed, lambda, v);
+    tmpl.run_graphcut(pixels, lambda, v);
 
     int n_plus = 0, n_minus = 0;
     for (int idx = 0; idx < n; idx++)
     {
-        if (v[idx] ==  1)
-            n_plus++;
-        if (v[idx] == -1)
-            n_minus++;
+        if (v[idx] ==  1) n_plus++;
+        if (v[idx] == -1) n_minus++;
     }
     printf("Labels apres graph cut : +1=%d  -1=%d\n", n_plus, n_minus);
 
@@ -79,8 +70,12 @@ std::vector<Pixel> algo_color_harmonization(std::string& img_path, double lambda
     else
         printf("Energie n'a pas diminue (diff=%.6f)\n", e_after - e_before);
 
-    return pixels;
+    printf("\n --- partie 4.1 --- \n");
+    std::vector<Pixel> result = tmpl.projectPixels(pixels, tmpl, v);
+    printf("Done\n");
+    return result;
 }
+
 
 auto draw_texture = [](GLuint tex, int img_w, int img_h,
                        int win_w, int win_h,
@@ -92,15 +87,26 @@ auto draw_texture = [](GLuint tex, int img_w, int img_h,
     float img_ratio  = (float)img_w / img_h;
     float zone_ratio = zone_w / zone_h;
 
-    float w, h;
-    if (img_ratio > zone_ratio) { w = x_right - x_left; h = w / img_ratio * win_w / win_h; }
-    else                        { h = 1.0f; w = h * img_ratio * win_h / win_w * 2.0f / (x_right - x_left) * (x_right - x_left); }
+    float draw_w, draw_h;
+
+    if (img_ratio > zone_ratio)
+    {
+        draw_w = zone_w;
+        draw_h = draw_w / img_ratio;
+    }
+    else
+    {
+        draw_h = zone_h;
+        draw_w = draw_h * img_ratio;
+    }
 
     float cx = (x_left + x_right) / 2.0f;
-    float l = cx - w / 2.0f;
-    float r = cx + w / 2.0f;
-    float t =  h;
-    float b = -h;
+    float cy = 0.0f;
+
+    float l = cx - (draw_w / win_w);
+    float r = cx + (draw_w / win_w);
+    float t = (draw_h / win_h);
+    float b = -(draw_h / win_h);
 
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, tex);
@@ -140,7 +146,7 @@ int main()
     // glfw
     if (!glfwInit())
         return -1;
-    GLFWwindow* window = glfwCreateWindow(1500, 900, "Image Harmony", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1500, 1500, "Image Harmony", NULL, NULL);
     if (!window)
     { 
         glfwTerminate(); 
@@ -198,6 +204,15 @@ int main()
                 glDeleteTextures(1, &current_tex);
             current_tex = load_texture(img_path, tex_w, tex_h);
             last_image = img_path;
+            float scale = std::min(
+                (float)max_w / (tex_w * 2),
+                (float)max_h / tex_h
+            );
+
+            int win_w = tex_w * 2 * scale;
+            int win_h = tex_h * scale;
+
+            glfwSetWindowSize(window, win_w, win_h);
         }
         int current_algo = interface.get_algo();
         if (last_algo != current_algo)
@@ -218,12 +233,15 @@ int main()
                 }
                 Image result(buffer, img.get_width(), img.get_height());
 
-                std::string out_path = "./assets/out/color_harmonization/" + filename;
-                // result.write_ppm(out_path);
+                std::string out_path = "../assets/out/color_harmonization/" 
+                       + filename.substr(0, filename.find_last_of('.')) 
+                       + ".ppm";
+
+                result.write_ppm(out_path);
 
                 if (result_tex)
                     glDeleteTextures(1, &result_tex);
-                // result_tex = load_texture(out_path, res_w, res_h);
+                result_tex = load_texture(out_path, res_w, res_h);
             }
             else if (current_algo == 2)
             {

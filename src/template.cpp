@@ -131,15 +131,12 @@ double Template::distanceToTemplate(double hue) const
 }
 
 
-double Template::distance_hue(double h1, double h2) const
+double Template::distance_hue(double h, double c) const
 {
-    double d = std::fabs(h1 - h2);
-
-    if (d > M_PI)
-        d = 2 * M_PI - d;
-
+    double d = congru(h - c);
     return d;
 }
+
 // 3.0
 double Template::F() const
 {
@@ -247,6 +244,7 @@ double Template::bestOrientation() const
     return x;
 }
 
+
 std::pair<Template_format, double> Template::bestTemplate() const
 { 
     Template_format best_format = i;
@@ -273,53 +271,28 @@ std::pair<Template_format, double> Template::bestTemplate() const
 
     return {best_format, best_angle};
 }
-// 4.1
+// 4.0
+
 double Template::energie_1(int width, int height,
-                            const std::vector<Pixel>& pixels,
-                            const std::vector<int>& v) const
+                           const std::vector<Pixel>& pixels,
+                           const std::vector<int>& v) const
 {
     double e1 = 0.0;
 
-    for (int y = 0; y < height; y++)
+    for (int idx = 0; idx < pixels.size(); idx++)
     {
-        for (int x = 0; x < width; x++)
-        {
-            int idx = y * width + x;
-            double h, s, val;
-            pixels[idx].toHSV(h, s, val);
+        double h, s, val;
+        pixels[idx].toHSV(h, s, val);
 
-            double theta_1 = 0.0;
-            double theta_2 = 0.0;
-            double min_dist_1 = 2 * M_PI;
-            double min_dist_2 = 2 * M_PI;
+        double theta = (v[idx] == 1 ? this->theta2[idx] : this->theta1[idx]);
+        double d = fabs(distance_hue(h, theta));
 
-            for (int n = 0; n < get_nbSector(); n++)
-            {
-                double left  = get_center(n) - get_widths(n) / 2.0;
-                double right = get_center(n) + get_widths(n) / 2.0;
-
-                double d_left  = congru(h - left);
-                double d_right = congru(h - right);
-
-                if (d_left > 0 && d_left < min_dist_1)
-				{
-                    min_dist_1 = d_left;
-                    theta_1 = left;
-                }
-                if (d_right < 0 && -d_right < min_dist_2)
-				{
-                    min_dist_2 = -d_right;
-                    theta_2 = right;
-                }
-            }
-
-            double h_border = (v[idx] == 1) ? theta_2 : theta_1;
-
-            e1 += distance_hue(h, h_border) * s;
-        }
+        e1 += d * s;
     }
     return e1;
 }
+
+
 
 double Template::energie_2(int width, int height,
                             const std::vector<Pixel>& pixels,
@@ -354,7 +327,7 @@ double Template::energie_2(int width, int height,
                 pixels[nidx].toHSV(h2, s2, val2);
 
                 double smax = std::max(s1, s2);
-                double dist = distance_hue(h1, h2);
+                double dist = fabs(distance_hue(h1, h2));
 
                 if (dist > 1e-6)
                     e2 += smax / dist;
@@ -363,6 +336,7 @@ double Template::energie_2(int width, int height,
     }
     return e2;
 }
+
 
 double Template::compute_energie(double lambda, const std::vector<int>& v) const
 {
@@ -376,162 +350,225 @@ double Template::compute_energie(double lambda, const std::vector<int>& v) const
     return lambda * e1 + e2;
 }
 
+
 void Template::set_image(std::string path)
 { 
   	this->img.set_path(path);
 }
 
-void Template::compute_thetas(const std::vector<Pixel>& pixels,
-                               std::vector<double>& theta_1,
-                               std::vector<double>& theta2,
-                               std::vector<bool>& is_fixed,
-                               std::vector<int>& v) const
-{
-    int n_pixels = pixels.size();
-    theta_1.resize(n_pixels);
-    theta2.resize(n_pixels);
-    is_fixed.resize(n_pixels, false);
-    v.resize(n_pixels, 1);
 
-    for (int idx = 0; idx < n_pixels; idx++)
+void Template::compute_thetas(const std::vector<Pixel>& pixels,  std::vector<int>& v)
+{
+    int N = pixels.size();
+    this->theta1.resize(N);
+    this->theta2.resize(N);
+    this->is_fixed.assign(N, false);
+    v.assign(N, 1);
+    for (int idx = 0; idx < N; idx++)
     {
-        double h, s, val;
-        pixels[idx].toHSV(h, s, val);
+        double h, s, vpx;
+        pixels[idx].toHSV(h, s, vpx);
 
         bool inside = false;
-      	for (int n = 0; n < get_nbSector(); n++)
-          	if (isInsideSector(h, n))
-          	{ 
-            	inside = true;
-            	break;
-          	}
-        if (inside)
-        {
-            is_fixed[idx] = true;
-            int sector = 0;
-            double min_d = distance_hue(h, get_center(0));
-            for (int n = 1; n < get_nbSector(); n++)
-            {
-                double d = distance_hue(h, get_center(n));
-                if (d < min_d)
-                {
-                  	min_d = d;
-                  	sector = n;
-                }
-            }
-            v[idx] = (congru(h - get_center(sector)) < 0) ? -1 : 1;
-            continue;
-        }
-
-        double min_dist_1 = 2 * M_PI;
-        double min_dist_2 = 2 * M_PI;
+        int best_sector = 0;
+        double best_d = 1e9;
 
         for (int n = 0; n < get_nbSector(); n++)
         {
-            double left  = get_center(n) - get_widths(n) / 2.0;
-            double right = get_center(n) + get_widths(n) / 2.0;
-
-            double d_left  = congru(h - left);
-            double d_right = congru(h - right);
-
-            if (d_left > 0 && d_left < min_dist_1)
+            if (isInsideSector(h, n))
             {
-                min_dist_1 = d_left;
-                theta_1[idx] = left;
+                inside = true;
+                double d = fabs(distance_hue(h, get_center(n)));
+                if (d < best_d)
+                {
+                    best_d = d;
+                    best_sector = n;
+                }
+            }
+        }
+
+        if (inside)
+        {
+            this->is_fixed[idx] = true;
+            double d = distance_hue(h, get_center(best_sector));
+            v[idx] = (d < 0 ? -1 : 1);
+            continue;
+        }
+
+        double best_left = 1e9;
+        double best_right = 1e9;
+
+        for (int n = 0; n < get_nbSector(); n++)
+        {
+            double c = get_center(n);
+            double w2 = get_widths(n) / 2.0;
+
+            double left = c - w2;
+            double right = c + w2;
+
+            double dl = distance_hue(h, left);
+            double dr = distance_hue(h, right);
+
+            if (dl < 0 && fabs(dl) < best_left)
+            {
+                best_left = fabs(dl);
+                this->theta1[idx] = left;
             }
 
-            if (d_right < 0 && -d_right < min_dist_2)
+            if (dr > 0 && fabs(dr) < best_right)
             {
-                min_dist_2 = -d_right;
-                theta2[idx] = right;
+                best_right = fabs(dr);
+                this->theta2[idx] = right;
             }
+        }
+        if (!this->is_fixed[idx])
+        {
+            if (best_left == 1e9)
+                this->theta1[idx] = get_center(0) - get_widths(0) / 2.0;
+
+            if (best_right == 1e9)
+                this->theta2[idx] = get_center(0) + get_widths(0) / 2.0;
         }
     }
 }
 
 
 
-void Template::run_graphcut(const std::vector<Pixel>& pixels,
-                             const std::vector<double>& theta1,
-                             const std::vector<double>& theta2,
-                             const std::vector<bool>& is_fixed,
-                             double lambda,
-                             std::vector<int>& v) const
+void Template::run_graphcut(const std::vector<Pixel>& pixels, double lambda, std::vector<int>& v) const
 {
-    int width  = img.get_width();
+    int N = pixels.size();
+    int width = img.get_width();
     int height = img.get_height();
-    int n_pixels = pixels.size();
 
-    typedef Graph<double, double, double> GraphType;
-    GraphType* g = new GraphType(n_pixels, n_pixels * 4);
-    g->add_node(n_pixels);
+    typedef Graph<double,double,double> GraphType;
+    GraphType* g = new GraphType(N, N * 4);
+    g->add_node(N);
 
-    for (int idx = 0; idx < n_pixels; idx++)
+    for (int idx = 0; idx < N; idx++)
     {
-      	double h, s, val;
-      	pixels[idx].toHSV(h, s, val);
+        double h, s, val;
+        pixels[idx].toHSV(h, s, val);
 
-      	if (is_fixed[idx])
-      	{
-          	double INF = 1e10;
-          	if (v[idx] == -1)
-              	g->add_tweights(idx, INF, 0);
-          	else
-              	g->add_tweights(idx, 0, INF);
-        	continue;
-      	}
+        if (this->is_fixed[idx])
+        {
+            double INF = 1e12;
+            if (v[idx] == -1)
+                g->add_tweights(idx, INF, 0);
+            else
+                g->add_tweights(idx, 0, INF);
+            continue;
+        }
 
-      	double cost_plus1  = lambda * distance_hue(h, theta2[idx]) * s;
-      	double cost_minus1 = lambda * distance_hue(h, theta1[idx]) * s;
+        double cost_minus = lambda * fabs(distance_hue(h, theta1[idx])) * s;
+        double cost_plus  = lambda * fabs(distance_hue(h, theta2[idx])) * s;
 
-      	g->add_tweights(idx, cost_plus1, cost_minus1);
+        g->add_tweights(idx, cost_plus, cost_minus);
     }
 
-    const int dx[4] = {1, 0, 1,  1};
+    const int dx[4] = {1, 0, 1, 1};
     const int dy[4] = {0, 1, 1, -1};
 
     for (int y = 0; y < height; y++)
     {
-      	for (int x = 0; x < width; x++)
+        for (int x = 0; x < width; x++)
         {
-          	int idx = y * width + x;
+            int idx = y * width + x;
 
-          	for (int k = 0; k < 4; k++)
+            for (int k = 0; k < 4; k++)
             {
-              	int nx = x + dx[k];
-              	int ny = y + dy[k];
+                int nx = x + dx[k];
+                int ny = y + dy[k];
 
                 if (nx < 0 || nx >= width || ny < 0 || ny >= height)
                     continue;
 
                 int nidx = ny * width + nx;
 
-                double h1, s1, val1;
-                double h2, s2, val2;
-                pixels[idx ].toHSV(h1, s1, val1);
-                pixels[nidx].toHSV(h2, s2, val2);
+                double h1, s1, v1;
+                double h2, s2, v2;
+                pixels[idx].toHSV(h1, s1, v1);
+                pixels[nidx].toHSV(h2, s2, v2);
 
                 double smax = std::max(s1, s2);
-                double dist = distance_hue(h1, h2);
+                double dist = fabs(distance_hue(h1, h2));
 
-                double w_pq = (dist > 1e-6) ? smax / dist : 1e6;
+                double w = (dist > 1e-6 ? smax / dist : 1e6);
 
-                g->add_edge(idx, nidx, w_pq, w_pq);
+                g->add_edge(idx, nidx, w, w);
             }
         }
     }
 
     g->maxflow();
 
-    for (int idx = 0; idx < n_pixels; idx++)
-    {
-        if (!is_fixed[idx])
-            v[idx] = (g->what_segment(idx) == GraphType::SOURCE) ? -1 : 1;
-    }
+    for (int idx = 0; idx < N; idx++)
+        if (!this->is_fixed[idx])
+            v[idx] = (g->what_segment(idx) == GraphType::SOURCE ? -1 : 1);
 
     delete g;
 }
+
 const std::vector<Pixel>&  Template::get_img() const
 { 
 	return this->img.get_img();
+}
+
+// 4.1
+double Template::gaussien(double esp, double st_dev, double x) const
+{
+    return exp(pow((x - esp) / st_dev, 2.0) / -2.0);
+}
+
+std::vector<Pixel> Template::projectPixels(std::vector<Pixel>& dataIn,
+                                           Template& temp,
+                                           std::vector<int>& V) const
+{
+    int N = dataIn.size();
+    std::vector<Pixel> out(N);
+
+    for (int p = 0; p < N; p++)
+    {
+        double h, s, v;
+        dataIn[p].toHSV(h, s, v);
+
+        if (this->is_fixed[p])
+        {
+            out[p] = dataIn[p];
+            continue;
+        }
+
+        double h_proj = h;
+        if (V[p] == -1)
+            h_proj = this->theta1[p];
+        else
+            h_proj = this->theta2[p];
+
+        int best = 0;
+        double best_d = 1e9;
+        for (int i = 0; i < temp.get_nbSector(); i++)
+        {
+            double d = fabs(distance_hue(h_proj, temp.get_center(i)));
+            if (d < best_d)
+            {
+                best_d = d;
+                best = i;
+            }
+        }
+
+        double c  = temp.get_center(best);
+        double w  = temp.get_widths(best);
+        double w2 = w / 2.0;
+
+        double d   = fabs(distance_hue(h_proj, c));
+        double sig = w2;
+        double g   = exp(-(d * d) / (2.0 * sig * sig));
+
+        double sign = (distance_hue(h_proj, c) >= 0 ? 1.0 : -1.0);
+
+        double h2 = c + sign * w2 * (1.0 - g);
+
+        out[p] = Pixel::toRGB(h2, s, v);
+    }
+
+    return out;
 }
