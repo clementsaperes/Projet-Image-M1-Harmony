@@ -20,9 +20,10 @@ public:
     Harmonization(double lambda = 50.0, double sigma = 0.5);
 
     
-    void compute_best_template();
+    void compute_best_template(double& angle, Template_format& format);
     void compute_labels();
     std::vector<Pixel> shift_hues();
+    void new_template(double angle, Template_format fmt);
 
     double get_lambda() const;
     double get_sigma()  const;

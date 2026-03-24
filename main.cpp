@@ -5,6 +5,7 @@
 #include "template.hpp"
 #include "harmonization.hpp"
 
+#include <iostream>
 #include <cstdio>
 #include <vector>
 #include <GL/glew.h>
@@ -27,7 +28,8 @@ int last_algo = 0;
 Harmonization harmo;
 double last_lambda = -1.0;
 double last_sigma = -1.0;
-
+double last_angle = 0.0;
+Template_format last_fmt = Template_format::i;
 
 int main()
 {
@@ -104,7 +106,10 @@ int main()
         {
             double current_lambda = interface.get_lambda();
             double current_sigma  = interface.get_sigma();
-            bool recompute_labels = (last_algo != 1) || (current_lambda != last_lambda);
+            double current_angle = interface.get_angle();
+            Template_format current_fmt = interface.get_fmt();
+            bool recompute_template =  (current_angle != last_angle) || (current_fmt != last_fmt);
+            bool recompute_labels =  (last_algo != 1) || recompute_template || (current_lambda != last_lambda);
             bool recompute_shift  = recompute_labels  || (current_sigma  != last_sigma);
 
             if (recompute_shift)
@@ -112,8 +117,14 @@ int main()
                 if (last_algo != 1)
                 {
                     harmo.set_image(img_path);
-                    harmo.compute_best_template();
+                    double agl;
+                    Template_format fmt;
+                    harmo.compute_best_template(agl, fmt);
+                    interface.set_angle(agl);
+                    interface.set_fmt(fmt);
                 }
+                if (recompute_template)
+                    harmo.new_template(current_angle, current_fmt); 
 
                 if (recompute_labels)
                 {
@@ -123,7 +134,6 @@ int main()
 
                 harmo.set_sigma(current_sigma);
                 std::vector<Pixel> pixels = harmo.shift_hues();
-
                 std::string filename = img_path.substr(img_path.find_last_of("/\\") + 1);
                 std::string out_path = "../assets/out/color_harmonization/"
                     + filename.substr(0, filename.find_last_of('.')) + ".ppm";
@@ -140,6 +150,8 @@ int main()
                 Image(buffer, original.get_width(), original.get_height()).write_ppm(out_path);
                 renderer.set_result(out_path);
 
+                last_fmt = current_fmt;
+                last_angle = current_angle;
                 last_lambda = current_lambda;
                 last_sigma  = current_sigma;
             }
