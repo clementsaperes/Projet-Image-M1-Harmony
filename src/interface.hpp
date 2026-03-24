@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include "template.hpp"
 
 class Interface {
 private:
@@ -11,6 +12,8 @@ private:
     int selected_algo = 0;
     float lambda;
     float sigma;
+    float angle;
+    Template_format fmt = Template_format::I;
 
 public:
     Interface();
@@ -22,7 +25,12 @@ public:
     void render(); // la partie ImGui
 
     double get_lambda() const;
-    double get_sigma()  const;
+    double get_sigma() const;
+    double get_angle() const;
+    Template_format get_fmt() const;
+    void set_angle(double angle_);
+    void set_fmt(Template_format fmt_);
+
     int get_algo() const;
     void set_algo(int algo);
 };
