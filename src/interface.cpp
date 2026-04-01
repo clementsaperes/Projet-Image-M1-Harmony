@@ -1,8 +1,8 @@
 #include "interface.hpp"
 #include "imgui.h"
 #include <filesystem>
-
-Interface::Interface() : selected_img(0), selected_algo(0) {}
+const char* format_names[] = { "i", "V", "L", "I", "T", "Y", "X" };
+Interface::Interface() : selected_img(0), selected_algo(0), lambda(5.0f), sigma(0.5f) {}
 
 void Interface::load_images(const std::string& folder)
 {
@@ -20,18 +20,6 @@ void Interface::load_images(const std::string& folder)
             }
         }
     }
-}
-
-std::string Interface::get_img() const
-{
-    if (images.empty())
-        return "";
-    return images[selected_img];
-}
-
-int Interface::get_algo() const
-{
-    return selected_algo;
 }
 
 void Interface::render()
@@ -59,7 +47,40 @@ void Interface::render()
     ImGui::Text("Choisir l'algorithme :");
     ImGui::RadioButton("Auncun algo", &selected_algo, 0);
     ImGui::RadioButton("color harmonization", &selected_algo, 1);
+    ImGui::Indent();
+    if (ImGui::CollapsingHeader("Parametres##1"))
+    {
+        ImGui::InputFloat("Angle", &angle, 0.01f, 100.0f, "%.001f");
+        const char* format_names[] = { "i", "V", "L", "I", "T", "Y", "X" };
+
+        for (int i = 0; i < IM_ARRAYSIZE(format_names); i++)
+        {
+            if (ImGui::RadioButton(format_names[i], static_cast<int>(fmt) == i))
+                fmt = static_cast<Template_format>(i);
+            if (i < 6) ImGui::SameLine();
+        }
+
+        ImGui::SliderFloat("Lambda", &lambda, 0.1f, 100.0f, "%.1f");
+        ImGui::SliderFloat("Sigma",  &sigma, 0.1f, 1.0f, "%.2f");
+    }
+    ImGui::Unindent();
     ImGui::RadioButton("Algo 2", &selected_algo, 2);
 
     ImGui::End();
 }
+
+double Interface::get_lambda() const { return (double)this->lambda; }
+double Interface::get_sigma()  const { return (double)this->sigma; }
+int Interface::get_algo() const { return this->selected_algo; }
+double Interface::get_angle() const { return (double)this->angle; }
+Template_format Interface::get_fmt() const { return this->fmt; }
+std::string Interface::get_img() const
+{
+    if (images.empty())
+        return "";
+    return images[selected_img];
+}
+
+void Interface::set_algo(int algo) { this->selected_algo = algo; }
+void Interface::set_angle(double angle_) { this->angle = angle_; }
+void Interface::set_fmt(Template_format fmt_) { this->fmt = fmt_; }
