@@ -112,6 +112,14 @@ double Template::congru(double angle)
     return (rest > M_PI) ? (rest - pi2) : ((rest <= -M_PI) ? (rest + pi2) : rest);
 }
 
+void Template::setWidths(double w) { for (int i=0 ; i<widths.size() ; i++) widths[i] = w; }
+void Template::setWidths(std::vector<double> w)
+{
+    if (widths.size() != w.size())
+        throw std::runtime_error("Le nombre de largeurs de secteurs ne doit pas changer !\n");
+    for (int i=0 ; i<widths.size() ; i++) widths[i] = w[i];
+}
+
 void Template::rotate(double angle)
 {
     for (int i = 0; i < centers.size(); i++)

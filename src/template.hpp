@@ -28,7 +28,7 @@ class Template
 
 	public:
   		Template(std::vector<double> c = {}, std::vector<double> w = {});
-  		Template(double c = 0, double w = 0);
+  		Template(double c, double w = TEMPLATE_DEFAULT_S_WIDTH);
   		Template(Template_format format);
 		void set_image(std::string path);
 		const std::vector<Pixel>& get_img() const;
@@ -38,6 +38,8 @@ class Template
   		const std::vector<double> get_center() const;
   		const std::vector<double> get_widths() const;
 
+		void setWidths(double w);
+		void setWidths(std::vector<double> w = {});
   		void rotate(double angle);
 
   		static double congru(double angle);
