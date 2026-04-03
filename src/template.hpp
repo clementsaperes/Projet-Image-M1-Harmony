@@ -58,6 +58,7 @@ class Template
 		void compute_labels(double lambda = 1.0);
 		// 4.1
 		std::vector<Pixel> shift_hues(double sigma_factor = 0.5) const;
+		std::vector<Pixel> shift_hues2() const;
 };
 
 

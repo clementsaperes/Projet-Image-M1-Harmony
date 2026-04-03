@@ -550,7 +550,7 @@ std::vector<Pixel> Template::shift_hues(double sigma_factor) const
     return result;
 }
 
-std::vector<Pixel> Template::shift_hues2(double sigma_factor) const
+std::vector<Pixel> Template::shift_hues2() const
 {
     const std::vector<Pixel> & pixels = img.get_img();
     std::vector<Pixel> result;
