@@ -53,25 +53,6 @@ for (int h = 0; h < HEIGHT; h += this->size_bloc) {
     this->img_mean = Image(mean, WIDTH, HEIGHT);
     this->img_mean.write_ppm("../assets/out/algo2/mean.ppm");
 }
-
-Template Mosaique::bloc_tmpl(std::vector<Pixel> data_tmp) const {
-    Template tmpl = Template(std::vector<double>{}, std::vector<double>{});
-    int nb_pixels = this->size_bloc * this->size_bloc * 3;
-    std::vector<unsigned char> tmp(nb_pixels);
-    for (int p = 0; p < nb_pixels; p += 3)
-    {
-        tmp[p + 0] = data_tmp[p / 3].r;
-        tmp[p + 1] = data_tmp[p / 3].g;
-        tmp[p + 2] = data_tmp[p / 3].b;
-    }
-    tmpl.set_image_v2(tmp, this->size_bloc, this->size_bloc);
-    double angle = tmpl.bestOrientation();
-    Template resultat = Template(Template_format::i);
-    resultat.set_image(this->path);
-    resultat.rotate(angle);
-    return resultat;
-}
-
 std::vector<Pixel> Mosaique::resize_image(std::vector<Pixel>& in)
 {
     const int HEIGHT = this->img_origin.get_height();
@@ -96,6 +77,28 @@ std::vector<Pixel> Mosaique::resize_image(std::vector<Pixel>& in)
     }
     return out;
 }
+
+Template Mosaique::bloc_tmpl(std::vector<Pixel> data_tmp) const {
+    int nb_pixels = this->size_bloc * this->size_bloc;
+    std::vector<unsigned char> tmp(nb_pixels * 3);
+    
+    for (int p = 0; p < nb_pixels; p++)
+    {
+        tmp[p * 3 + 0] = data_tmp[p].r;
+        tmp[p * 3 + 1] = data_tmp[p].g;
+        tmp[p * 3 + 2] = data_tmp[p].b;
+    }
+
+    Template tmpl = Template(std::vector<double>{}, std::vector<double>{});
+    tmpl.set_image_v2(tmp, this->size_bloc, this->size_bloc);
+    
+    auto [format, angle] = tmpl.bestTemplate();
+    Template result((Template_format)format);
+    result.set_image(this->path);
+    result.rotate(angle);
+    return result;
+}
+
 
 void Mosaique::compute_mosaique() {
     const std::vector<Pixel> DATA_MEAN = this->img_mean.get_img();
