@@ -94,8 +94,8 @@ Template Mosaique::bloc_tmpl(std::vector<Pixel> data_tmp, const std::vector<unsi
     Template tmpl = Template(std::vector<double>{}, std::vector<double>{});
     tmpl.set_image_v2(tmp, this->size_bloc, this->size_bloc);
     
-    double angle = tmpl.bestOrientation();
-    Template result(Template_format::i);
+    auto [fmt, angle] = tmpl.bestTemplate();
+    Template result(fmt);
     result.set_image_v2(origin_data, ORIGIN_W, ORIGIN_H);
     result.rotate(angle);
     return result;
