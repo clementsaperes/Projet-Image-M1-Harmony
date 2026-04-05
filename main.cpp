@@ -128,6 +128,7 @@ int main()
                     harmo.compute_best_template(agl, fmt);
                     interface.set_angle(agl);
                     interface.set_fmt(fmt);
+                    harmo.build_graph();
                 }
                 if (recompute_template)
                     harmo.new_template(current_angle, current_fmt); 
@@ -135,7 +136,7 @@ int main()
                 if (recompute_labels)
                 {
                     harmo.set_lambda(current_lambda);
-                    harmo.compute_labels();
+                    harmo.solve_graph();
                 }
 
                 harmo.set_sigma(current_sigma);

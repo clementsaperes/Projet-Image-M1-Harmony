@@ -82,7 +82,7 @@ std::vector<Pixel> Mosaique::resize_image(std::vector<Pixel>& in)
     return out;
 }
 
-Template Mosaique::bloc_tmpl(std::vector<Pixel> data_tmp, const std::vector<unsigned char>& origin_data, int ORIGIN_W, int ORIGIN_H, int bloc_idx) {
+void Mosaique::bloc_tmpl(std::vector<Pixel> data_tmp, const std::vector<unsigned char>& origin_data, int ORIGIN_W, int ORIGIN_H, int bloc_idx) {
     int nb_pixels = this->size_bloc * this->size_bloc;
     std::vector<unsigned char> tmp(nb_pixels * 3);
     
@@ -100,7 +100,6 @@ Template Mosaique::bloc_tmpl(std::vector<Pixel> data_tmp, const std::vector<unsi
     result.set_image_v2(origin_data, ORIGIN_W, ORIGIN_H);
     result.rotate(angle);
     this->modif_mosa[bloc_idx] = result;
-    return result;
 }
 
 void Mosaique::compute_mosaique() {
@@ -135,8 +134,10 @@ void Mosaique::compute_mosaique() {
             for (int y = w; y < w + this->size_bloc; y++)
                 bloc[(x - h) * this->size_bloc + (y - w)] = DATA_MEAN[x * WIDTH + y];
 
-        Template tmpl = bloc_tmpl(bloc, origin_data, ORIGIN_W, ORIGIN_H, bloc_idx);
-        tmpl.compute_labels(this->lambda);
+        bloc_tmpl(bloc, origin_data, ORIGIN_W, ORIGIN_H, bloc_idx);
+        Template tmpl = this->modif_mosa[bloc_idx];
+        tmpl.build_graph();
+        tmpl.solve_graph(this->lambda);
         std::vector<Pixel> resultat_bloc = tmpl.shift_hues(this->sigma);
         resultat_bloc = resize_image(resultat_bloc);
 
@@ -148,11 +149,11 @@ void Mosaique::compute_mosaique() {
                 mosaique_data[(x * WIDTH + y) * 3 + 2] = p.b;
             }
 
-        #pragma omp critical
-        {
-            count++;
-            printf("%d/%d\n", count, total);
-        }
+        // #pragma omp critical
+        // {
+        //     count++;
+        //     printf("%d/%d\n", count, total);
+        // }
     }
 
     this->img_mosaique = Image(mosaique_data, WIDTH, HEIGHT);
@@ -175,7 +176,8 @@ void Mosaique::recompute_lambda_sigma() {
         int w = (bloc_idx % nb_blocs_w) * this->size_bloc;
 
         Template tmpl = this->modif_mosa[bloc_idx];
-        tmpl.compute_labels(this->lambda);
+        tmpl.build_graph();
+        tmpl.solve_graph(this->lambda);
         std::vector<Pixel> resultat_bloc = tmpl.shift_hues(this->sigma);
         resultat_bloc = resize_image(resultat_bloc);
 

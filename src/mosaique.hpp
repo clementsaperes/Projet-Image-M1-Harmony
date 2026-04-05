@@ -13,7 +13,7 @@ class Mosaique {
         float lambda = 1.0f;
         float sigma = 0.5f;
         std::string path;
-        Template bloc_tmpl(std::vector<Pixel> data_tmp, const std::vector<unsigned char>& origin_data, int ORIGIN_W, int ORIGIN_H, int bloc_idx);
+        void bloc_tmpl(std::vector<Pixel> data_tmp, const std::vector<unsigned char>& origin_data, int ORIGIN_W, int ORIGIN_H, int bloc_idx);
         std::vector<Pixel> resize_image(std::vector<Pixel>& in);
     public:
         Mosaique() = default;
