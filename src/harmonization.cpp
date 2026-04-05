@@ -28,12 +28,13 @@ std::vector<Pixel> Harmonization::shift_hues()
     return tmpl.shift_hues(sigma);
 }
 
-void Harmonization::new_template(double angle, Template_format fmt)
+void Harmonization::new_template(double angle, Template_format fmt, double width)
 {
     Template new_tmpl = Template(fmt);
     new_tmpl.set_image(img_path);
     new_tmpl.rotate(angle);
     new_tmpl.build_graph();
+    new_tmpl.setWidths(width);
     this->tmpl = new_tmpl;
 }
 

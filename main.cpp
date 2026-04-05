@@ -32,6 +32,7 @@ std::string last_image;
 int last_algo = 0;
 // algo Color Harmonization
 Harmonization harmo;
+double last_width = 3.14f;
 double last_lambda = -1.0;
 double last_sigma = -1.0;
 double last_angle = 0.0;
@@ -115,8 +116,9 @@ int main() {
             double current_lambda = interface.get_lambda();
             double current_sigma = interface.get_sigma();
             double current_angle = interface.get_angle();
+            double current_width = interface.get_width();
             Template_format current_fmt = interface.get_fmt();
-            bool recompute_template = (current_angle != last_angle) || (current_fmt != last_fmt);
+            bool recompute_template = (current_angle != last_angle) || (current_fmt != last_fmt) || (current_width != last_width);
             bool recompute_labels = (last_algo != 1) || recompute_template || (current_lambda != last_lambda);
             bool recompute_shift = recompute_labels  || (current_sigma  != last_sigma);
 
@@ -129,9 +131,11 @@ int main() {
                     interface.set_angle(agl);
                     interface.set_fmt(fmt);
                     harmo.build_graph();
+                    interface.set_width();
+                    current_width = 3.14;
                 }
                 if (recompute_template)
-                    harmo.new_template(current_angle, current_fmt);
+                    harmo.new_template(current_angle, current_fmt, current_width);
 
                 if (recompute_labels) {
                     harmo.set_lambda(current_lambda);
@@ -229,10 +233,11 @@ int main() {
                     Template_format best_fmt;
                     harmo_bench.compute_best_template(best_angle, best_fmt);
 
-                    harmo_bench.new_template(best_angle, fmt);
+                    harmo_bench.new_template(best_angle, fmt, 3.14);
 
                     harmo_bench.set_lambda(5.0);
-                    harmo_bench.compute_labels();
+                    harmo_bench.build_graph();
+                    harmo_bench.solve_graph();
 
                     harmo_bench.set_sigma(0.5);
                     std::vector<Pixel> pixels = harmo_bench.shift_hues();

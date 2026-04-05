@@ -46,16 +46,17 @@ void Interface::render() {
         for (int i = 0; i < IM_ARRAYSIZE(format_names); i++) {
             if (ImGui::RadioButton(format_names[i], static_cast<int>(fmt) == i))
                 fmt = static_cast<Template_format>(i);
-            if (i < 6)
+            if (i < 8)
                 ImGui::SameLine();
         }
-
+        ImGui::SliderFloat("wdith", &width, 0.1f, 3.2f, "%.1f");
         ImGui::SliderFloat("Lambda", &lambda, 0.1f, 100.0f, "%.1f");
         ImGui::SliderFloat("Sigma", &sigma, 0.1f, 1.0f, "%.2f");
     }
     ImGui::Unindent();
     ImGui::RadioButton("Mosaïque", &selected_algo, 2);
-    if (ImGui::CollapsingHeader("Parametres##2"))
+    ImGui::Indent();
+    if (ImGui::CollapsingHeader("Parametres##1"))
     {
         ImGui::Text("Bloc size");
         ImGui::SameLine();
@@ -70,12 +71,8 @@ void Interface::render() {
         ImGui::SliderFloat("Lambda", &lambda_2, 0.1f, 100.0f, "%.1f");
         ImGui::SliderFloat("Sigma",  &sigma_2, 0.1f, 1.0f, "%.2f");
     }
-
-    ImGui::Separator();
-    if (ImGui::Button("Benchmark", ImVec2(-1, 0))) {
-        selected_algo = 2;
-    }
-
+    ImGui::Unindent();
+    ImGui::RadioButton("Benchmark", &selected_algo, 3);
     ImGui::End();
 }
 
@@ -87,6 +84,8 @@ int Interface::get_algo() const { return this->selected_algo; }
 int Interface::get_bloc_size() const { return this->bloc_size; }
 double Interface::get_angle() const { return (double)this->angle; }
 Template_format Interface::get_fmt() const { return this->fmt; }
+double Interface::get_width() const { return (double)this->width; }
+void Interface::set_width() { this->width = 3.14f; }
 std::string Interface::get_img() const {
     if (images.empty())
         return "";

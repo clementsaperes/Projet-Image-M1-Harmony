@@ -23,7 +23,7 @@ public:
     void compute_best_template(double& angle, Template_format& format);
     void compute_labels();
     std::vector<Pixel> shift_hues();
-    void new_template(double angle, Template_format fmt);
+    void new_template(double angle, Template_format fmt, double width);
 
     double get_lambda() const;
     double get_sigma()  const;
