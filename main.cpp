@@ -32,7 +32,7 @@ std::string last_image;
 int last_algo = 0;
 // algo Color Harmonization
 Harmonization harmo;
-double last_width = 3.14f;
+double last_width = 1.0f;
 double last_lambda = -1.0;
 double last_sigma = -1.0;
 double last_angle = 0.0;
@@ -132,7 +132,7 @@ int main() {
                     interface.set_fmt(fmt);
                     harmo.build_graph();
                     interface.set_width();
-                    current_width = 3.14;
+                    current_width = 1.0;
                 }
                 if (recompute_template)
                     harmo.new_template(current_angle, current_fmt, current_width);
@@ -233,7 +233,7 @@ int main() {
                     Template_format best_fmt;
                     harmo_bench.compute_best_template(best_angle, best_fmt);
 
-                    harmo_bench.new_template(best_angle, fmt, 3.14);
+                    harmo_bench.new_template(best_angle, fmt, 1.0);
 
                     harmo_bench.set_lambda(5.0);
                     harmo_bench.build_graph();

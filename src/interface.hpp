@@ -17,7 +17,7 @@ private:
     float sigma_2 = 0.5f;
     float lambda_2 = 1.0f;
     int bloc_size = 8;
-    float width = 3.14f;
+    float width = 1.0f;
 public:
     Interface();
 

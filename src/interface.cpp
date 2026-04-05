@@ -49,7 +49,7 @@ void Interface::render() {
             if (i < 8)
                 ImGui::SameLine();
         }
-        ImGui::SliderFloat("wdith", &width, 0.1f, 3.2f, "%.1f");
+        ImGui::SliderFloat("width", &width, 0.1f, 1.0f, "%.1f");
         ImGui::SliderFloat("Lambda", &lambda, 0.1f, 100.0f, "%.1f");
         ImGui::SliderFloat("Sigma", &sigma, 0.1f, 1.0f, "%.2f");
     }
@@ -85,7 +85,7 @@ int Interface::get_bloc_size() const { return this->bloc_size; }
 double Interface::get_angle() const { return (double)this->angle; }
 Template_format Interface::get_fmt() const { return this->fmt; }
 double Interface::get_width() const { return (double)this->width; }
-void Interface::set_width() { this->width = 3.14f; }
+void Interface::set_width() { this->width = 1.0f; }
 std::string Interface::get_img() const {
     if (images.empty())
         return "";
