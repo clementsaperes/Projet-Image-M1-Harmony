@@ -1,15 +1,12 @@
 #include "harmonization.hpp"
 #include "image.hpp"
 #include "interface.hpp"
+#include "mosaique.hpp"
 #include "rendering.hpp"
 #include "src/harmonization.hpp"
 #include "src/mosaique.hpp"
 #include "template.hpp"
-#include "harmonization.hpp"
-#include "mosaique.hpp"
 
-#include <cstdio>
-#include <vector>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <cstdio>
@@ -118,9 +115,13 @@ int main() {
             double current_angle = interface.get_angle();
             double current_width = interface.get_width();
             Template_format current_fmt = interface.get_fmt();
-            bool recompute_template = (current_angle != last_angle) || (current_fmt != last_fmt) || (current_width != last_width);
-            bool recompute_labels = (last_algo != 1) || recompute_template || (current_lambda != last_lambda);
-            bool recompute_shift = recompute_labels  || (current_sigma  != last_sigma);
+            bool recompute_template = (current_angle != last_angle) ||
+                                      (current_fmt != last_fmt) ||
+                                      (current_width != last_width);
+            bool recompute_labels = (last_algo != 1) || recompute_template ||
+                                    (current_lambda != last_lambda);
+            bool recompute_shift =
+                recompute_labels || (current_sigma != last_sigma);
 
             if (recompute_shift) {
                 if (last_algo != 1) {
@@ -135,7 +136,8 @@ int main() {
                     current_width = 1.0;
                 }
                 if (recompute_template)
-                    harmo.new_template(current_angle, current_fmt, current_width);
+                    harmo.new_template(current_angle, current_fmt,
+                                       current_width);
 
                 if (recompute_labels) {
                     harmo.set_lambda(current_lambda);
@@ -167,27 +169,30 @@ int main() {
                 last_lambda = current_lambda;
                 last_sigma = current_sigma;
             }
-        } else if (current_algo == 2)
-        {
+        } else if (current_algo == 2) {
             int current_block_size = interface.get_bloc_size();
             float current_lambda_2 = interface.get_lambda_2();
             float current_sigma_2 = interface.get_sigma_2();
-            if (last_algo != 2 || current_block_size != last_block_size)
-            {
+            if (last_algo != 2 || current_block_size != last_block_size) {
                 mosa.set_size_bloc(current_block_size);
                 mosa.set_img(img_path);
                 mosa.compute_mean();
                 mosa.compute_mosaique();
-                std::string filename = img_path.substr(img_path.find_last_of('/') + 1);
-                renderer.set_result("../assets/out/mosaique/mosaique_" + std::to_string(current_block_size) + "_" + filename);
-            }
-            else if (current_lambda_2 != last_lambda_2 || current_sigma_2 != last_sigma_2)
-            {
+                std::string filename =
+                    img_path.substr(img_path.find_last_of('/') + 1);
+                renderer.set_result("../assets/out/mosaique/mosaique_" +
+                                    std::to_string(current_block_size) + "_" +
+                                    filename);
+            } else if (current_lambda_2 != last_lambda_2 ||
+                       current_sigma_2 != last_sigma_2) {
                 mosa.set_lambda(current_lambda_2);
                 mosa.set_sigma(current_sigma_2);
                 mosa.recompute_lambda_sigma();
-                std::string filename = img_path.substr(img_path.find_last_of('/') + 1);
-                renderer.set_result("../assets/out/mosaique/mosaique_" + std::to_string(current_block_size) + "_" + filename);
+                std::string filename =
+                    img_path.substr(img_path.find_last_of('/') + 1);
+                renderer.set_result("../assets/out/mosaique/mosaique_" +
+                                    std::to_string(current_block_size) + "_" +
+                                    filename);
             }
             last_lambda_2 = current_lambda_2;
             last_sigma_2 = current_sigma_2;
@@ -215,11 +220,12 @@ int main() {
                 Template_format formats[] = {
                     Template_format::i, Template_format::V, Template_format::L,
                     Template_format::I, Template_format::T, Template_format::Y,
-                    Template_format::X};
-                const char *format_names[] = {"i", "V", "L", "I",
-                                              "T", "Y", "X"};
+                    Template_format::X, Template_format::t, Template_format::q};
+                const char *format_names[] = {"i", "V",         "L",
+                                              "I", "T",         "Y",
+                                              "X", "triadique", "quadratique"};
 
-                for (int fmt_idx = 0; fmt_idx < 7; fmt_idx++) {
+                for (int fmt_idx = 0; fmt_idx < 9; fmt_idx++) {
                     Template_format fmt = formats[fmt_idx];
 
                     std::cout
@@ -235,7 +241,7 @@ int main() {
 
                     harmo_bench.new_template(best_angle, fmt, 1.0);
 
-                    harmo_bench.set_lambda(5.0);
+                    harmo_bench.set_lambda(1);
                     harmo_bench.build_graph();
                     harmo_bench.solve_graph();
 

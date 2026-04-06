@@ -1,8 +1,9 @@
 #include "interface.hpp"
 #include "imgui.h"
 #include <filesystem>
-const char* format_names[] = { "i", "V", "L", "I", "T", "Y", "X", "t", "q"};
-Interface::Interface() : selected_img(0), selected_algo(0), lambda(5.0f), sigma(0.5f) {}
+const char *format_names[] = {"i", "V", "L", "I", "T", "Y", "X", "t", "q"};
+Interface::Interface()
+    : selected_img(0), selected_algo(0), lambda(5.0f), sigma(0.5f) {}
 
 void Interface::load_images(const std::string &folder) {
     images.clear();
@@ -56,20 +57,19 @@ void Interface::render() {
     ImGui::Unindent();
     ImGui::RadioButton("Mosaïque", &selected_algo, 2);
     ImGui::Indent();
-    if (ImGui::CollapsingHeader("Parametres##1"))
-    {
+    if (ImGui::CollapsingHeader("Parametres##1")) {
         ImGui::Text("Bloc size");
         ImGui::SameLine();
-        if (ImGui::RadioButton("4",  bloc_size == 4))
+        if (ImGui::RadioButton("4", bloc_size == 4))
             bloc_size = 4;
         ImGui::SameLine();
-        if (ImGui::RadioButton("8",  bloc_size == 8))
+        if (ImGui::RadioButton("8", bloc_size == 8))
             bloc_size = 8;
         ImGui::SameLine();
         if (ImGui::RadioButton("16", bloc_size == 16))
             bloc_size = 16;
         ImGui::SliderFloat("Lambda", &lambda_2, 0.1f, 100.0f, "%.1f");
-        ImGui::SliderFloat("Sigma",  &sigma_2, 0.1f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Sigma", &sigma_2, 0.1f, 1.0f, "%.2f");
     }
     ImGui::Unindent();
     ImGui::RadioButton("Benchmark", &selected_algo, 3);
@@ -77,9 +77,9 @@ void Interface::render() {
 }
 
 double Interface::get_lambda() const { return (double)this->lambda; }
-double Interface::get_sigma()  const { return (double)this->sigma; }
+double Interface::get_sigma() const { return (double)this->sigma; }
 double Interface::get_lambda_2() const { return (double)this->lambda_2; }
-double Interface::get_sigma_2()  const { return (double)this->sigma_2; }
+double Interface::get_sigma_2() const { return (double)this->sigma_2; }
 int Interface::get_algo() const { return this->selected_algo; }
 int Interface::get_bloc_size() const { return this->bloc_size; }
 double Interface::get_angle() const { return (double)this->angle; }
