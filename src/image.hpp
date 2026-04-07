@@ -102,9 +102,6 @@ class Image
   		void read_stb(const std::string path);
   		void write_ppm(const std::string &path) const;
 
-  		double psnr(const Image &other) const;
-  		void histogram(const std::string name) const;
-  		void histogram_one_channel(const std::string name, char channel) const;
 
   		const int get_nb_pixels() const;
   		const int get_width() const;

@@ -57,7 +57,7 @@ void Mosaique::compute_mean() {
     this->img_mean.write_ppm("../assets/out/mosaique/mean_" + std::to_string(this->size_bloc) + "_" + filename);
 }
 
-std::vector<Pixel> Mosaique::resize_image(std::vector<Pixel>& in)
+std::vector<Pixel> Mosaique::resize_image(const std::vector<Pixel>& in)
 {
     const int HEIGHT = this->img_origin.get_height();
     const int WIDTH = this->img_origin.get_width();
@@ -82,7 +82,7 @@ std::vector<Pixel> Mosaique::resize_image(std::vector<Pixel>& in)
     return out;
 }
 
-void Mosaique::bloc_tmpl(std::vector<Pixel> data_tmp, const std::vector<unsigned char>& origin_data, int ORIGIN_W, int ORIGIN_H, int bloc_idx) {
+void Mosaique::bloc_tmpl(const std::vector<Pixel>& data_tmp, const std::vector<unsigned char>& origin_data, int ORIGIN_W, int ORIGIN_H, int bloc_idx) {
     int nb_pixels = this->size_bloc * this->size_bloc;
     std::vector<unsigned char> tmp(nb_pixels * 3);
     
@@ -118,7 +118,6 @@ void Mosaique::compute_mosaique() {
     }
 
     std::vector<unsigned char> mosaique_data(HEIGHT * WIDTH * 3);
-    int count = 0;
 
     int nb_blocs_w = WIDTH / this->size_bloc;
     int nb_blocs_h = HEIGHT / this->size_bloc;
@@ -148,12 +147,6 @@ void Mosaique::compute_mosaique() {
                 mosaique_data[(x * WIDTH + y) * 3 + 1] = p.g;
                 mosaique_data[(x * WIDTH + y) * 3 + 2] = p.b;
             }
-
-        // #pragma omp critical
-        // {
-        //     count++;
-        //     printf("%d/%d\n", count, total);
-        // }
     }
 
     this->img_mosaique = Image(mosaique_data, WIDTH, HEIGHT);
@@ -169,7 +162,6 @@ void Mosaique::recompute_lambda_sigma() {
     int nb_blocs_h = HEIGHT / this->size_bloc;
     int total = nb_blocs_w * nb_blocs_h;
     std::vector<unsigned char> mosaique_data(HEIGHT * WIDTH * 3);
-    int count = 0;
     #pragma omp parallel for schedule(dynamic)
     for (int bloc_idx = 0; bloc_idx < total; bloc_idx++) {
         int h = (bloc_idx / nb_blocs_w) * this->size_bloc;
@@ -188,11 +180,6 @@ void Mosaique::recompute_lambda_sigma() {
                 mosaique_data[(x * WIDTH + y) * 3 + 1] = p.g;
                 mosaique_data[(x * WIDTH + y) * 3 + 2] = p.b;
             }
-        #pragma omp critical
-        {
-            count++;
-            printf("%d/%d\n", count, total);
-        }
     }
 
     this->img_mosaique = Image(mosaique_data, WIDTH, HEIGHT);

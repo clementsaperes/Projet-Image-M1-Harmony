@@ -17,9 +17,8 @@ private:
     static void draw_texture(GLuint tex, int img_w, int img_h,
                              int win_w, int win_h,
                              float x_left, float x_right);
-
-public:
     GLuint load_texture(const std::string& path, int& width, int& height);
+public:
 
     void set_current(const std::string& path);
     void set_result(const std::string& path);

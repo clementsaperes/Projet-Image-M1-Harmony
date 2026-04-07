@@ -13,8 +13,8 @@ class Mosaique {
         float lambda = 1.0f;
         float sigma = 0.5f;
         std::string path;
-        void bloc_tmpl(std::vector<Pixel> data_tmp, const std::vector<unsigned char>& origin_data, int ORIGIN_W, int ORIGIN_H, int bloc_idx);
-        std::vector<Pixel> resize_image(std::vector<Pixel>& in);
+        void bloc_tmpl(const std::vector<Pixel>& data_tmp, const std::vector<unsigned char>& origin_data, int ORIGIN_W, int ORIGIN_H, int bloc_idx);
+        std::vector<Pixel> resize_image(const std::vector<Pixel>& in);
     public:
         Mosaique() = default;
         ~Mosaique() = default;
@@ -25,7 +25,6 @@ class Mosaique {
         void set_sigma(float sigma_);
         void compute_mean();
         void compute_mosaique();
-        const std::vector<Pixel> get_mosaique() const;
         void recompute_lambda_sigma();
 };
 #endif

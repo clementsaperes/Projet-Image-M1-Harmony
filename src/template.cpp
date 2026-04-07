@@ -268,79 +268,6 @@ std::pair<Template_format, double> Template::bestTemplate() const {
     return {best_format, best_angle};
 }
 // 4.0
-double Template::e1(const std::vector<int> &labels,
-                    const std::vector<int> &pixel_indices) const {
-    const auto &pixels = img.get_img();
-    double sum = 0.0;
-
-    for (int p_i = 0; p_i < (int)pixel_indices.size(); p_i++) {
-        double h, s, v;
-        pixels[pixel_indices[p_i]].toHSV(h, s, v);
-        double border_hue = 0;
-        if (labels[p_i] == 0)
-            border_hue = theta_1[pixel_indices[p_i]];
-        else
-            border_hue = theta_2[pixel_indices[p_i]];
-        sum += std::abs(congru(h - border_hue)) * s;
-    }
-    return sum;
-}
-
-double Template::e2(const std::vector<int> &labels,
-                    const std::vector<int> &pixel_indices) const {
-    const auto &pixels = img.get_img();
-    int img_width = img.get_width();
-
-    std::unordered_map<int, int> idx_map;
-    for (int i = 0; i < (int)pixel_indices.size(); i++)
-        idx_map[pixel_indices[i]] = i;
-
-    const int dx[] = {1, 0};
-    const int dy[] = {0, 1};
-
-    double E2_sum = 0.0;
-
-    for (int pixel_idx = 0; pixel_idx < (int)pixel_indices.size();
-         pixel_idx++) {
-        int flat_p = pixel_indices[pixel_idx];
-        int col_p = flat_p % img_width;
-        int row_p = flat_p / img_width;
-
-        double H_p, S_p, V_p;
-        pixels[flat_p].toHSV(H_p, S_p, V_p);
-        H_p = congru(H_p);
-
-        for (int d = 0; d < 2; d++) {
-            int flat_q = (row_p + dy[d]) * img_width + (col_p + dx[d]);
-
-            auto it = idx_map.find(flat_q);
-            if (it == idx_map.end())
-                continue;
-
-            int j = it->second;
-
-            if (labels[pixel_idx] == labels[j])
-                continue;
-
-            double H_q, S_q, V_q;
-            pixels[flat_q].toHSV(H_q, S_q, V_q);
-            H_q = congru(H_q);
-
-            double S_max = std::max(S_p, S_q);
-            double hue_dist = std::abs(congru(H_p - H_q));
-            double w_pq = S_max / (hue_dist + 1e-8);
-
-            E2_sum += w_pq;
-        }
-    }
-    return E2_sum;
-}
-
-double Template::e(const std::vector<int> &labels,
-                   const std::vector<int> &pixel_indices, double lambda) const {
-    return lambda * e1(labels, pixel_indices) + e2(labels, pixel_indices);
-}
-
 void Template::compute_thetas() {
     const auto &pixels = img.get_img();
     int N = (int)pixels.size();
@@ -416,7 +343,6 @@ SharedGraph Template::build_graph()
         }
     }
 
-    // merge final
     g.non_fixed.clear();
     g.non_fixed.reserve(pixel_size);
     for (const auto& buf : local_buffers)
@@ -454,9 +380,9 @@ SharedGraph Template::build_graph()
                 continue;
             int j = it->second;
 
-            double smax   = std::max(g.hsv_cache[flat_p].s, g.hsv_cache[flat_q].s);
+            double smax = std::max(g.hsv_cache[flat_p].s, g.hsv_cache[flat_q].s);
             double h_dist = std::abs(congru(g.hsv_cache[flat_p].h - g.hsv_cache[flat_q].h));
-            double w_pq   = smax / (h_dist + 1e-8);
+            double w_pq = smax / (h_dist + 1e-8);
 
             g.cached_edges.push_back({i, j, w_pq});
         }

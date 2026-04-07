@@ -65,9 +65,6 @@ class Template
 		double bestOrientation() const; // M(X,Tm) dans le papier
 		std::pair<Template_format, double> bestTemplate() const; // B(X)
 		// 4.0
- 		double e1(const std::vector<int>& labels, const std::vector<int>& pixel_indices) const;
-		double e2(const std::vector<int>& labels, const std::vector<int>& pixel_indices) const;
-		double e(const std::vector<int>& labels, const std::vector<int>& pixel_indices, double lambda = 1.0) const;
 		void compute_thetas();
 		void solve_graph(double lambda);
 		SharedGraph build_graph();
