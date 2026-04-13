@@ -552,7 +552,6 @@ std::vector<Pixel> Template::shift_hues(double sigma_factor) const
     return result;
 }
 
-// marche pas encore !
 std::vector<Pixel> Template::shift_hues2() const
 {
     const std::vector<Pixel> & pixels = img.get_img();
@@ -594,7 +593,7 @@ std::vector<Pixel> Template::shift_hues2() const
             {
                 double border_tested = centers[sector] + (label==0 ? 1 : -1)*widths[sector] / 2.0;
                 double border_dist = congru(target_border - border_tested);
-                if (border_dist == 0)
+                if (border_dist == 0) // !!!!!
                 {
                     index = sector;
                     break;
@@ -604,9 +603,9 @@ std::vector<Pixel> Template::shift_hues2() const
         
         double C = centers[index];
         double d = congru(C-h);
-        double sens = (nb_sectors==1 && !isInside) ? (pixel_label[i]==0 ? 1.0 : -1.0) : (d<0 ? 1.0 : -1.0);
-        d = isInside ? abs(d) : ((pixel_label[i]==0 ? 1.0 : -1.0) * (h-C));
-        d += d>0 ? 0 : pi2;
+        double sens = (nb_sectors==1 && !isInside) ? (pixel_label[p]==0 ? 1.0 : -1.0) : (d<0 ? 1.0 : -1.0);
+        d = isInside ? abs(d) : ((pixel_label[p]==0 ? 1.0 : -1.0) * (h-C));
+        d += d>0 ? 0.0 : pi2;
         pixelIndexPerSector[2*index + (sens==1.0 ? 0 : 1)].push_back(p);
         distances[p] = d;
         sensVec[p] = sens;
@@ -615,8 +614,13 @@ std::vector<Pixel> Template::shift_hues2() const
     for (int sector=0 ; sector<nb_sectors ; sector++) for (int sensI=0 ; sensI<2 ; sensI++)
     {
         int demiSector = 2*sector + sensI;
-        double distMin = distances[pixelIndexPerSector[demiSector][0]];
-        double distMax = distances[pixelIndexPerSector[demiSector][0]];
+        double distMin = 0;
+        double distMax = 0;
+        if (pixelIndexPerSector[demiSector].size() != 0)
+        {
+            distMin = distances[pixelIndexPerSector[demiSector][0]];
+            distMax = distances[pixelIndexPerSector[demiSector][0]];
+        }
         for (int p=1 ; p<pixelIndexPerSector[demiSector].size() ; p++)
         {
             distMin = std::min(distMin, distances[pixelIndexPerSector[demiSector][p]]);
