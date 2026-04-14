@@ -205,13 +205,18 @@ int main() {
                     img_path.substr(img_path.find_last_of("/\\") + 1);
                 std::string base_name =
                     filename.substr(0, filename.find_last_of('.'));
-                std::string benchmark_dir =
-                    "../assets/out/benchmark/" + base_name;
+                std::string benchmark_dir_shift_hues =
+                    "../assets/out/benchmark/shift_hues/" + base_name;
+                std::string benchmark_dir_shift_hues2 =
+                    "../assets/out/benchmark/shift_hues2/" + base_name;
 
                 try {
-                    std::filesystem::create_directories(benchmark_dir);
+                    std::filesystem::create_directories(
+                        benchmark_dir_shift_hues);
+                    std::filesystem::create_directories(
+                        benchmark_dir_shift_hues2);
                 } catch (const std::exception &e) {
-                    std::cerr << "Erreur de crétion du dossier: " << e.what()
+                    std::cerr << "Erreur de création du dossier: " << e.what()
                               << std::endl;
                 }
 
@@ -235,9 +240,7 @@ int main() {
                     Harmonization harmo_bench;
                     harmo_bench.set_image(img_path);
 
-                    double best_angle;
-                    Template_format best_fmt;
-                    harmo_bench.compute_best_template(best_angle, best_fmt);
+                    double best_angle = harmo_bench.compute_best_angle(fmt);
 
                     harmo_bench.new_template(best_angle, fmt, 1.0);
 
@@ -246,27 +249,51 @@ int main() {
                     harmo_bench.solve_graph();
 
                     harmo_bench.set_sigma(0.5);
-                    std::vector<Pixel> pixels = harmo_bench.shift_hues();
 
-                    std::string out_path = benchmark_dir + "/" + base_name +
-                                           "_template_" +
-                                           format_names[fmt_idx] + ".ppm";
+                    std::vector<Pixel> pixels_shift_hues =
+                        harmo_bench.shift_hues();
+                    std::string out_path_shift_hues =
+                        benchmark_dir_shift_hues + "/" + base_name +
+                        "_template_" + format_names[fmt_idx] + ".ppm";
 
-                    std::vector<unsigned char> buffer;
-                    buffer.reserve(pixels.size() * 3);
-                    for (const Pixel &p : pixels) {
-                        buffer.push_back(p.r);
-                        buffer.push_back(p.g);
-                        buffer.push_back(p.b);
+                    std::vector<unsigned char> buffer_shift_hues;
+                    buffer_shift_hues.reserve(pixels_shift_hues.size() * 3);
+                    for (const Pixel &p : pixels_shift_hues) {
+                        buffer_shift_hues.push_back(p.r);
+                        buffer_shift_hues.push_back(p.g);
+                        buffer_shift_hues.push_back(p.b);
                     }
-                    Image(buffer, original.get_width(), original.get_height())
-                        .write_ppm(out_path);
+                    Image(buffer_shift_hues, original.get_width(),
+                          original.get_height())
+                        .write_ppm(out_path_shift_hues);
+                    std::cout
+                        << "Sauvegardé (shift_hues): " << out_path_shift_hues
+                        << std::endl;
 
-                    std::cout << "Sauvegardé: " << out_path << std::endl;
+                    std::vector<Pixel> pixels_shift_hues2 =
+                        harmo_bench.shift_hues2();
+                    std::string out_path_shift_hues2 =
+                        benchmark_dir_shift_hues2 + "/" + base_name +
+                        "_template_" + format_names[fmt_idx] + ".ppm";
+
+                    std::vector<unsigned char> buffer_shift_hues2;
+                    buffer_shift_hues2.reserve(pixels_shift_hues2.size() * 3);
+                    for (const Pixel &p : pixels_shift_hues2) {
+                        buffer_shift_hues2.push_back(p.r);
+                        buffer_shift_hues2.push_back(p.g);
+                        buffer_shift_hues2.push_back(p.b);
+                    }
+                    Image(buffer_shift_hues2, original.get_width(),
+                          original.get_height())
+                        .write_ppm(out_path_shift_hues2);
+                    std::cout
+                        << "Sauvegardé (shift_hues2): " << out_path_shift_hues2
+                        << std::endl;
                 }
 
-                std::cout << "Benchmark complété! Voir: " << benchmark_dir
-                          << std::endl;
+                std::cout << "Benchmark complété! Voir: "
+                          << benchmark_dir_shift_hues << " et "
+                          << benchmark_dir_shift_hues2 << std::endl;
                 benchmark_done = true;
                 interface.set_algo(0);
                 current_algo = 0;

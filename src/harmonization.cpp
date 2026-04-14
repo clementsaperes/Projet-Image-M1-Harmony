@@ -20,12 +20,25 @@ void Harmonization::compute_best_template(double& angle, Template_format& format
     tmpl.rotate(angle);
 }
 
+double Harmonization::compute_best_angle(Template_format fmt)
+{
+    Template temp(fmt);
+    temp.set_image(img_path);
+    double angle = temp.bestOrientation();
+    return angle;
+}
+
 void Harmonization::build_graph() { tmpl.build_graph(); }
 void Harmonization::solve_graph() { tmpl.solve_graph(this->lambda); }
 
 std::vector<Pixel> Harmonization::shift_hues()
 {
     return tmpl.shift_hues(sigma);
+}
+
+std::vector<Pixel> Harmonization::shift_hues2()
+{
+    return tmpl.shift_hues2();
 }
 
 void Harmonization::new_template(double angle, Template_format fmt, double width)
