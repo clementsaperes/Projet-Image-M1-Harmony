@@ -33,6 +33,7 @@ double last_width = 1.0f;
 double last_lambda = -1.0;
 double last_sigma = -1.0;
 double last_angle = 0.0;
+int last_proj = 0;
 Template_format last_fmt = Template_format::i;
 // algo mosa
 Mosaique mosa;
@@ -114,6 +115,7 @@ int main() {
             double current_sigma = interface.get_sigma();
             double current_angle = interface.get_angle();
             double current_width = interface.get_width();
+            int current_proj = interface.get_projection();
             Template_format current_fmt = interface.get_fmt();
             bool recompute_template = (current_angle != last_angle) ||
                                       (current_fmt != last_fmt) ||
@@ -121,7 +123,7 @@ int main() {
             bool recompute_labels = (last_algo != 1) || recompute_template ||
                                     (current_lambda != last_lambda);
             bool recompute_shift =
-                recompute_labels || (current_sigma != last_sigma);
+                recompute_labels || (current_sigma != last_sigma) || (current_proj != last_proj);
 
             if (recompute_shift) {
                 if (last_algo != 1) {
@@ -146,10 +148,10 @@ int main() {
 
                 harmo.set_sigma(current_sigma);
                 std::vector<Pixel> pixels;
-                int proj = interface.get_projection();
-                if (proj == 0)
+                
+                if (current_proj == 0)
                     pixels = harmo.shift_hues();
-                else if (proj == 1)
+                else if (current_proj == 1)
                     pixels = harmo.shift_hues2();
                 
                 std::string filename =
@@ -174,6 +176,7 @@ int main() {
                 last_angle = current_angle;
                 last_lambda = current_lambda;
                 last_sigma = current_sigma;
+                last_proj = current_proj;
             }
         } else if (current_algo == 2) {
             int current_block_size = interface.get_bloc_size();
