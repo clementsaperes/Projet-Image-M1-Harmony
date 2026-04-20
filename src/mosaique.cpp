@@ -54,7 +54,8 @@ void Mosaique::compute_mean() {
     }
     this->img_mean = Image(mean, WIDTH, HEIGHT);
     std::string filename = this->path.substr(this->path.find_last_of('/') + 1);
-    this->img_mean.write_ppm("../assets/out/mosaique/mean_" + std::to_string(this->size_bloc) + "_" + filename);
+    filename = filename.substr(0, filename.size() - 4);
+    this->img_mean.write_ppm("../assets/out/mosaique/mean_" + std::to_string(this->size_bloc) + "_" + filename + ".ppm");
 }
 
 std::vector<Pixel> Mosaique::resize_image(std::vector<Pixel>& in)
@@ -197,5 +198,6 @@ void Mosaique::recompute_lambda_sigma() {
 
     this->img_mosaique = Image(mosaique_data, WIDTH, HEIGHT);
     std::string filename = this->path.substr(this->path.find_last_of('/') + 1);
-    this->img_mosaique.write_ppm("../assets/out/mosaique/mosaique_" + std::to_string(this->size_bloc) + "_" + filename);
+    filename = filename.substr(0, filename.size() - 4);
+    this->img_mosaique.write_ppm("../assets/out/mosaique/mosaique_" + std::to_string(this->size_bloc) + "_" + filename + ".ppm");
 }
