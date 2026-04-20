@@ -10,6 +10,7 @@ private:
     std::vector<std::string> images;
     int selected_img;
     int selected_algo = 0;
+    int projection = 0;
     float lambda = 1.0f;
     float sigma;
     float angle;
@@ -32,6 +33,7 @@ public:
     double get_lambda_2() const;
     double get_sigma_2() const;
     double get_angle() const;
+    int get_projection() const;
     Template_format get_fmt() const;
     void set_angle(double angle_);
     void set_fmt(Template_format fmt_);
