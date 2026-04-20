@@ -42,6 +42,9 @@ void Interface::render() {
     ImGui::RadioButton("color harmonization", &selected_algo, 1);
     ImGui::Indent();
     if (ImGui::CollapsingHeader("Parametres##1")) {
+        ImGui::RadioButton("Projection papier", &projection, 0);
+        ImGui::SameLine();
+        ImGui::RadioButton("Projection à nous", &projection, 1);
         ImGui::InputFloat("Angle", &angle, 0.01f, 100.0f, "%.001f");
 
         for (int i = 0; i < IM_ARRAYSIZE(format_names); i++) {
@@ -80,6 +83,7 @@ double Interface::get_lambda() const { return (double)this->lambda; }
 double Interface::get_sigma() const { return (double)this->sigma; }
 double Interface::get_lambda_2() const { return (double)this->lambda_2; }
 double Interface::get_sigma_2() const { return (double)this->sigma_2; }
+int Interface::get_projection() const { return this->projection; }
 int Interface::get_algo() const { return this->selected_algo; }
 int Interface::get_bloc_size() const { return this->bloc_size; }
 double Interface::get_angle() const { return (double)this->angle; }

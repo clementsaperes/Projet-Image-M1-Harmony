@@ -145,7 +145,13 @@ int main() {
                 }
 
                 harmo.set_sigma(current_sigma);
-                std::vector<Pixel> pixels = harmo.shift_hues();
+                std::vector<Pixel> pixels;
+                int proj = interface.get_projection();
+                if (proj == 0)
+                    pixels = harmo.shift_hues();
+                else if (proj == 1)
+                    pixels = harmo.shift_hues2();
+                
                 std::string filename =
                     img_path.substr(img_path.find_last_of("/\\") + 1);
                 std::string out_path =
