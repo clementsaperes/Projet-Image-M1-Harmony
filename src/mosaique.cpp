@@ -150,16 +150,17 @@ void Mosaique::compute_mosaique() {
                 mosaique_data[(x * WIDTH + y) * 3 + 2] = p.b;
             }
 
-        // #pragma omp critical
-        // {
-        //     count++;
-        //     printf("%d/%d\n", count, total);
-        // }
+        #pragma omp critical
+        {
+            count++;
+            printf("%d/%d\n", count, total);
+        }
     }
 
     this->img_mosaique = Image(mosaique_data, WIDTH, HEIGHT);
     std::string filename = this->path.substr(this->path.find_last_of('/') + 1);
-    this->img_mosaique.write_ppm("../assets/out/mosaique/mosaique_" + std::to_string(this->size_bloc) + "_" + filename);
+    filename = filename.substr(0, filename.size() - 4);
+    this->img_mosaique.write_ppm("../assets/out/mosaique/mosaique_" + std::to_string(this->size_bloc) + "_" + filename + ".ppm");
 }
 
 
